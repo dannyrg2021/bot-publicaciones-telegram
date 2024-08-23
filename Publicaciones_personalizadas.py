@@ -8,6 +8,7 @@ from flask import Flask, request
 import re
 import threading
 import time
+import traceback
 
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -15,7 +16,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 #----------------Constantes------------------------
 
 bot=telebot.TeleBot(os.environ["token"], "html", disable_web_page_preview=True)
-admin=os.environ["admin"]
+admin=1259506390
 lote_publicaciones={}
 lista_canales=[]
 if os.name=="nt":
@@ -28,27 +29,27 @@ hilo_publicar=False
 
 ####################Constantes END##################
 
-try:
-    print(f"La dirección del servidor es:{request.host_url}")
-except:
-    app = Flask(__name__)
+# try:
+#     print(f"La dirección del servidor es:{request.host_url}")
+# except:
+#     app = Flask(__name__)
 
-    @app.route('/')
-    def index():
-        return "Hello World"
+#     @app.route('/')
+#     def index():
+#         return "Hello World"
 
-    def flask():
-        app.run(host="0.0.0.0", port=5000)
-
-
+#     def flask():
+#         app.run(host="0.0.0.0", port=5000)
 
 
 
-try:
-    print(f"La dirección del servidor es:{request.host_url}")
-except:
-    hilo_flask=threading.Thread(name="hilo_flask", target=flask)
-    hilo_flask.start()
+
+
+# try:
+#     print(f"La dirección del servidor es:{request.host_url}")
+# except:
+#     hilo_flask=threading.Thread(name="hilo_flask", target=flask)
+#     hilo_flask.start()
 
 
     
@@ -72,7 +73,7 @@ def enviar_publicacion(publicacion, user):
             except:
                 for canal_error in cursor.fetchall():
                     if canal_error[0]==canal:
-                        bot.send_message(user, f"No se pudo eliminar el mensaje al canal: {canal_error[1]}, su ID es: {canal_error[0]}\n\nRevisa que yo posea los permisos administrativos y de publicar, o que el canal/grupo siquiera siga existiendo")
+                        bot.send_message(user, f"No se pudo eliminar el mensaje al canal: {canal_error[1]}, su ID es: {canal_error[0]}\n\nRevisa que yo posea los permisos administrativos y de ELIMINAR, o que el canal/grupo siquiera siga existiendo")
         
         
     lista_message_id_eliminar=[]
@@ -89,7 +90,7 @@ def enviar_publicacion(publicacion, user):
                 
                 
                 if lista=="photo":
-                    with open(diccionario_publicacion[lista][0].name, "rb") as archivo:
+                    with open(diccionario_publicacion[lista][0], "rb") as archivo:
                         if len(diccionario_publicacion[lista])==3:
                             msg=bot.send_photo(canal, archivo , caption=diccionario_publicacion[lista][1], reply_markup=diccionario_publicacion[lista][2])
                             lista_message_id_eliminar.append(msg)
@@ -99,7 +100,7 @@ def enviar_publicacion(publicacion, user):
                             lista_message_id_eliminar.append(msg)
                         
                 elif lista=="video":
-                    with open(diccionario_publicacion[lista][0].name, "rb") as archivo:
+                    with open(diccionario_publicacion[lista][0], "rb") as archivo:
                         if len(diccionario_publicacion[lista])==3:
                             msg=bot.send_video(canal, archivo, caption=diccionario_publicacion[lista][1], reply_markup=diccionario_publicacion[lista][2])
                             lista_message_id_eliminar.append(msg.message_id)
@@ -109,7 +110,7 @@ def enviar_publicacion(publicacion, user):
                             lista_message_id_eliminar.append(msg)
                 
                 elif lista=="audio":
-                    with open(diccionario_publicacion[lista][0].name, "rb") as archivo:
+                    with open(diccionario_publicacion[lista][0], "rb") as archivo:
                         if len(diccionario_publicacion[lista])==3:
                             msg=bot.send_audio(canal, archivo, caption=diccionario_publicacion[lista][1], reply_markup=diccionario_publicacion[lista][2])
                             lista_message_id_eliminar.append(msg)
@@ -119,7 +120,7 @@ def enviar_publicacion(publicacion, user):
                             lista_message_id_eliminar.append(msg)
                 
                 elif lista=="document":
-                    with open(diccionario_publicacion[lista][0].name, "rb") as archivo:
+                    with open(diccionario_publicacion[lista][0], "rb") as archivo:
                         if len(diccionario_publicacion[lista])==3:
                             msg=bot.send_document(canal, archivo, caption=diccionario_publicacion[lista][1], reply_markup=diccionario_publicacion[lista][2])
                             lista_message_id_eliminar.append(msg)
@@ -148,7 +149,7 @@ def enviar_publicacion(publicacion, user):
             cursor.execute('SELECT * FROM CANALES')
             for canal_error in cursor.fetchall():
                 if canal_error[0]==canal:
-                    bot.send_message(admin, f"No se pudo enviar el mensaje al canal/grupo: <b>{canal_error[1]}</b>, su ID es: <code>{canal_error[0]}</code>\n\nRevisa que yo posea los permisos administrativos y de publicar, o que el canal/grupo siquiera siga existiendo. Mi recomendación es que borre dicho Canal/Grupo de la Publicación y de la Base de Datos\n\n<u><b>Descripción del error</b></u>:\n{e}", parse_mode="html")
+                    bot.send_message(admin, f"No se pudo enviar el mensaje al canal/grupo: <b>{canal_error[1]}</b>, su ID es: <code>{canal_error[0]}</code>\n\nRevisa que yo posea los permisos administrativos y de publicar, o que el canal/grupo siquiera siga existiendo. Mi recomendación es que borre dicho Canal/Grupo de la Publicación y de la Base de Datos\n\n<u><b>Descripción del error</b></u>:\n{e}\n<u>Traceback error</u>:\n{traceback.print_exc()}", parse_mode="html")
             continue
         
         
@@ -316,6 +317,7 @@ bot.set_my_commands([
 
 #----------------------------------------------------Handlers----------------------------------------------------
 
+
 @bot.message_handler(func=lambda message: not int(message.chat.id)==int(admin))
 def cmd_being_sure_you_are_admin(message):
     if not message.chat.type == "private":
@@ -342,6 +344,8 @@ def cmd_start(message):
 
 @bot.message_handler(commands=["panel"])
 def cmd_panel(message):
+    if os.path.isfile("BD_Canales_prueba.db"):
+        os.remove("BD_Canales_prueba.db")
     
     panel=InlineKeyboardMarkup(row_width=1)
     panel.add(
@@ -352,8 +356,8 @@ def cmd_panel(message):
         InlineKeyboardButton("Agregar/Quitar canales a una Publicacion", callback_data="agregar_publicacion"),
         InlineKeyboardButton("Tiempo Eliminación de Publicación 💥", callback_data="eliminar_publicacion"),
         InlineKeyboardButton("Comenzar a Publicar 🚦", callback_data="comenzar_hilo"),
-        InlineKeyboardButton("Detener hilo de publicación 🛑", callback_data="detener_hilo")
-        # InlineKeyboardButton("Cargar/Enviar Copia de Seguridad ⛽", callback_data="copia_seguridad")
+        InlineKeyboardButton("Detener hilo de publicación 🛑", callback_data="detener_hilo"),
+        InlineKeyboardButton("Cargar/Enviar Copia de Seguridad ⛽", callback_data="copia_seguridad")
         )
     bot.send_message(message.chat.id, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", reply_markup=panel)
     
@@ -412,7 +416,7 @@ def cmd_callback_handler(call):
                             for lista in diccionario_publicacion:
                                 
                                 if lista=="photo":
-                                    with open(diccionario_publicacion[lista][0].name, "rb") as archivo:
+                                    with open(diccionario_publicacion[lista][0], "rb") as archivo:
                                         if len(diccionario_publicacion[lista])==3:
                                             bot.send_photo(message.chat.id, archivo , caption=diccionario_publicacion[lista][1], reply_markup=diccionario_publicacion[lista][2])
                                     
@@ -420,7 +424,7 @@ def cmd_callback_handler(call):
                                             bot.send_photo(message.chat.id, archivo, caption=diccionario_publicacion[lista][1])
                                         
                                 elif lista=="video":
-                                    with open(diccionario_publicacion[lista][0].name, "rb") as archivo:
+                                    with open(diccionario_publicacion[lista][0], "rb") as archivo:
                                         if len(diccionario_publicacion[lista])==3:
                                             bot.send_video(message.chat.id, archivo, caption=diccionario_publicacion[lista][1], reply_markup=diccionario_publicacion[lista][2])
                                         
@@ -428,7 +432,7 @@ def cmd_callback_handler(call):
                                             bot.send_video(message.chat.id, archivo, caption=diccionario_publicacion[lista][1])
                                 
                                 elif lista=="audio":
-                                    with open(diccionario_publicacion[lista][0].name, "rb") as archivo:
+                                    with open(diccionario_publicacion[lista][0], "rb") as archivo:
                                         if len(diccionario_publicacion[lista])==3:
                                             bot.send_audio(message.chat.id, archivo, caption=diccionario_publicacion[lista][1], reply_markup=diccionario_publicacion[lista][2])
                                         
@@ -436,7 +440,7 @@ def cmd_callback_handler(call):
                                             bot.send_audio(message.chat.id, archivo, caption=diccionario_publicacion[lista][1])
                                 
                                 elif lista=="document":
-                                    with open(diccionario_publicacion[lista][0].name, "rb") as archivo:
+                                    with open(diccionario_publicacion[lista][0], "rb") as archivo:
                                         if len(diccionario_publicacion[lista])==3:
                                             bot.send_document(message.chat.id, archivo, caption=diccionario_publicacion[lista][1], reply_markup=diccionario_publicacion[lista][2])
                                         
@@ -477,7 +481,7 @@ def cmd_callback_handler(call):
                             
                             texto=f"<u><b>El ID de esta publicación es</b></u>: <b>{lote_publicaciones[publicacion].ID}</b>\n\n{texto}\n\n"
                             
-                            texto+=f"Tiempo de publicaciones: {int(lote_publicaciones[publicacion].tiempo_publicacion/60)} minutos"
+                            texto+=f"<u><b>Tiempo para publicación</b></u>: {int(lote_publicaciones[publicacion].tiempo_publicacion/60)} minutos"
                             
                             if lote_publicaciones[publicacion].tiempo_eliminacion:
                                 texto+=f"\n\nTiempo de eliminación de publicaciones: {int(lote_publicaciones[publicacion].tiempo_eliminacion/60)} minutos"
@@ -566,7 +570,6 @@ def cmd_callback_handler(call):
         
         def remove_channels(message):
             global conexion
-            user=message.chat.id
 
             markup=ReplyKeyboardMarkup(True, True, input_field_placeholder="ELija de uno en uno los canales", row_width=3)
             
@@ -1686,30 +1689,154 @@ Ahora envía tu mensaje :D""", reply_markup=InlineKeyboardMarkup(row_width=1).ad
         guardar_variables()
         return
     
-    # elif call.data=="copia_seguridad":
-    #     bot.send_message(call.from_user.id,"En este apartado puedes mantener mi información a salvo en caso de pérdida o error por parte del servidor dónde estoy alojado como bot\n<u>Dispones de 2 opciones</u>:\n\n1- Guardar Copias:\nCon esta opción te enviaré mis archivos más importantes EN SU ESTADO ACTUAL ('<b>BD_Canales.db</b>' que almacena los Canales y '<b>publicaciones.dill</b>' que almacena las Publicaciones), si se agregan más canales o publicaciones la copia de seguridad deberá de actualizarse, siendo reemplazada por otra. Deberás guardar esto en tu almacenamiento local o en alguna parte de Internet seguro como una copia de seguridad para si ocurre algún error conmigo\n\n1- Cargar Copias:\nMe enviarás dichos archivos para que yo cargue su contenido y obtenga los datos que tenía anteriormente\n<b>ADVERTENCIA IMPORTANTE!:</b>\nCuando cargue los datos de un archivo, los datos que tenía actualmente serán ELIMINADOS. Debes de estar muy seguro de lo que vas a hacer", reply_markup=ReplyKeyboardRemove())
-    #     markup=InlineKeyboardMarkup(row_width=1).add(
-    #         InlineKeyboardButton("Guardar Copias", callback_data="guarda_copia"),
-    #         InlineKeyboardButton("Cargar Copias", callback_data="cargar_copia"),
-    #         InlineKeyboardButton("Cancelar", callback_data="cancelar")
-    #         )
-    #     bot.send_message(call.from_user.id, "Muy bien, qué planeas hacer?", reply_markup=markup)
-        
-    # elif call.data=="guarda_copia":
-    #     if "BD_Canales.db" in os.listdir():
-    #         with open("BD_Canales.db", "rb") as archivo:
-    #             bot.send_document(call.from_user.id, archivo, caption="Este es la base de datos de Canales")
-            
-    #     if "publicaciones.dill" in os.listdir():
-    #         with open("publicaciones.dill", "rb") as archivo:
-    #             bot.send_document(call.from_user.id, archivo, caption="Este es el lista de Publicaciones")
-        
-    #     bot.send_message(call.from_user.id, "Guarda adecuadamente esos datos, podrían ser necesarios en el futuro\n\nTe devolveré atrás")
-        
-    #     return
     
-    # elif call.data=="cargar_copia":
-    #     bot.send_message(call.from_user.id, "Muy bien, ahora envíame ")
+    #---------------------Copia de seguridad----------------------------------------
+    elif call.data=="copia_seguridad":
+        
+
+        bot.send_message(call.from_user.id,"<b>Explicación</b>:\nEn este apartado puedes mantener mi información a salvo en caso de pérdida o error por parte del servidor dónde estoy alojado como bot\nDispones de 2 opciones:\n\n1- Guardar Copias:\nCon esta opción te enviaré mis archivos más importantes EN SU ESTADO ACTUAL ('<b>BD_Canales.db</b>' que almacena los Canales y '<b>publicaciones.dill</b>' que almacena las Publicaciones), si se agregan más canales o publicaciones la copia de seguridad deberá de actualizarse, siendo reemplazada por otra. Deberás guardar esto en tu almacenamiento local o en alguna parte de Internet seguro como una copia de seguridad para si ocurre algún error conmigo\n\n2- Cargar Copias:\nMe enviarás dichos archivos para que yo cargue su contenido y obtenga los datos que tenía anteriormente\n<b>ADVERTENCIA IMPORTANTE!:</b>\nCuando cargue los datos de un archivo, los datos que tenía actualmente serán ELIMINADOS. Debes de estar muy seguro de lo que vas a hacer", reply_markup=ReplyKeyboardRemove())
+        markup=InlineKeyboardMarkup(row_width=1).add(
+            InlineKeyboardButton("Guardar Copias", callback_data="guarda_copia"),
+            InlineKeyboardButton("Cargar Copias", callback_data="cargar_copia"),
+            )
+        bot.send_message(call.from_user.id, "Muy bien, qué planeas hacer?", reply_markup=markup)
+        
+        
+        
+    elif call.data=="guarda_copia":
+        if "BD_Canales.db" in os.listdir():
+            with open("BD_Canales.db", "rb") as archivo:
+                bot.send_document(call.from_user.id, archivo, caption="Este es la base de datos de Canales")
+            
+        if "publicaciones.dill" in os.listdir():
+            with open("publicaciones.dill", "rb") as archivo:
+                bot.send_document(call.from_user.id, archivo, caption="Este es el lista de Publicaciones")
+        
+        bot.send_message(call.from_user.id, "Guarda adecuadamente esos datos, ambos son necesarios podrías necesitarlos en el futuro.\nAsegúrate de guardarlos JUNTOS para no generar incompatibilidad ya que para hacer la CARGA debes enviar los mismos 2 archivos\n\nTe devolveré atrás")
+        
+        return
+    
+    elif call.data=="cargar_copia":
+        if os.path.isfile("BD_Canales_prueba.db"):
+            os.remove("BD_Canales_prueba.db")
+            
+        if hilo_publicaciones_activo==True:
+            bot.send_message(call.from_user.id, "No puedo cargar los ficheros mientras estoy publicando!, ¡Detén el hilo de publicaciones primero y luego regresa!\n\nTe devuelvo atrás")
+            return
+        
+        msg=bot.send_message(call.from_user.id, "Muy bien, ahora envíame los archivos para cargarlos, empezemos por el de la lista de canales\n\nA continuación, envíame el archivo '<b>BD_Canales.db</b>'")
+        
+        def cargar_copia_recibir_archivo(message):
+            if not message.content_type=="document":
+                bot.send_message(message.chat.id, "¡No me has enviado el documento que te solicité!\n\nRecuerda que debe de ser el archivo de base de datos que alguna vez te envié llamado '<b>BD_Canales.db</b>'")
+                return
+            
+            else:
+                error=False
+                with open("BD_Canales_prueba.db", "wb") as canales:
+                    canales.write(bot.download_file(bot.get_file(message.document.file_id).file_path))
+                    canales.seek(0) 
+                        
+                    try:
+                        prueba=sqlite3.connect(canales.name)
+                        prueba_cursor=prueba.cursor()
+                        prueba_cursor.execute("SELECT * FROM CANALES")
+                        prueba_cursor.fetchall()
+                    except Exception as e:
+
+                        bot.send_message(message.chat.id, f"Al parecer el archivo que enviaste no era una Base de Datos o era una Base de Datos incorrecta\n\nDescripción del error:\n{e}\n\nTraceback error:\n{traceback.print_exc()}")
+                        
+                        bot.send_message(message.chat.id, "Te devuelvo atrás")
+                        return
+
+                msg=bot.send_message(message.chat.id, "<b>Base de datos guardada exitosamente :)</b>\n\nAhora envíame a continuación el archivo '<b>publicaciones.dill</b>'")
+                            
+                def cargar_copia_recibir_publicaciones(message):
+                    global conexion
+                    global cursor
+                    global lote_publicaciones
+                    if not message.content_type=="document":
+                        bot.send_message(message.chat.id, "¡No me has enviado el documento que te solicité!\n\nRecuerda que debe de ser el archivo de base de datos que alguna vez te envié llamado '<b>publicaciones.dill</b>'\n\nTe devuelvo atrás")
+                        return
+                
+                
+                    else:
+                        publicaciones_archivo=open("publicaciones_prueba.dill", "wb")
+                        publicaciones_archivo.write(bot.download_file(bot.get_file(message.document.file_id).file_path))
+                        publicaciones_archivo.seek(0)
+                        canales=open("BD_Canales_prueba.db", "rb")
+                        prueba=sqlite3.connect(canales.name)
+                        prueba_cursor=prueba.cursor()
+                        prueba_cursor.execute("SELECT * FROM CANALES")
+                        lista_canales_bd=[]
+                        
+                        for tupla_canal in prueba_cursor.fetchall():
+                            lista_canales_bd.append(tupla_canal[0])
+                        
+                        publicaciones_archivo.close()
+                        try:
+                            publicaciones_archivo=open("publicaciones_prueba.dill", "rb")
+                            diccionario=dill.load(publicaciones_archivo)
+                            for publicacion in diccionario:
+                                for canal in diccionario[publicacion].canales:
+                                    if not canal in lista_canales_bd:
+                                        bot.send_message(message.chat.id, "Al parecer este archivo de 'publicaciones.dill' no coincide con la base de datos de canales que me enviaste anteriormente, me quedaré con las que ya tenía anteriormente hasta que me envíes el archivo de publicaciones adecuado junto con su base de datos")
+                                        
+                                        bot.send_message(message.chat.id, "Te devuelvo atrás")
+
+                                        canales.close()
+                                        publicaciones_archivo.close()
+                                        del canales
+                                        del publicaciones_archivo
+                                        os.remove("publicaciones_prueba.dill")
+                                                            
+                                        return
+                        except Exception as e:
+                            canales.close()
+                            publicaciones_archivo.close()
+                            del canales
+                            del publicaciones_archivo
+                            bot.send_message(message.chat.id, f"Has enviado el archivo equivocado al parecer\n\n<u>Descripción del error</u>:\n{e}\n\nTe devuelvo atrás")
+                            os.remove("publicaciones_prueba.dill")
+                            return
+
+                                    
+
+                        
+                        
+                        if os.path.isfile("publicaciones.dill"):
+                            canales.close()
+                            
+                            del canales
+                            
+                            os.remove("publicaciones.dill")
+                        
+                        prueba_cursor.execute("SELECT * FROM CANALES")
+                        lista_nueva=prueba_cursor.fetchall()
+                        cursor.execute("DELETE FROM CANALES")
+                        
+                        for tupla_canal in lista_nueva:
+                            cursor.execute(f"INSERT INTO CANALES VALUES (?, ?)", (tupla_canal[0], tupla_canal[1]))
+                        
+                        conexion.commit()
+
+
+                        publicaciones_archivo.close()
+                        del publicaciones_archivo
+                        os.rename("publicaciones_prueba.dill", "publicaciones.dill" )
+                                
+                        conexion=sqlite3.connect("BD_Canales.db")
+                        cursor=conexion.cursor()
+                        cargar_variables()
+                        
+                        bot.send_message(message.chat.id, "Archivos cargados exitosamente :)\n\nTe devuelvo atrás")
+                        return
+                        
+                
+                bot.register_next_step_handler(msg, cargar_copia_recibir_publicaciones)
+                            
+        
+        bot.register_next_step_handler(msg, cargar_copia_recibir_archivo)
     
     
     
