@@ -4,7 +4,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeybo
 import sqlite3
 import dill
 import os
-from flask import Flask
+from flask import Flask, request
 import re
 import threading
 import time
@@ -27,6 +27,26 @@ hilo_publicaciones_activo=False
 hilo_publicar=False
 
 ####################Constantes END##################
+
+try:
+    print("La dirección del host es: " + str(request.host_url))
+
+except:
+    app=Flask(__name__)
+    
+    @app.route("/")
+    def index():
+        return True
+    
+    
+    def run_flask():
+        app.run("0.0.0.0", port=5000)
+        
+    
+    hilo_flask=threading.Thread(name="hilo_flask", target=run_flask)
+    hilo_flask.start()
+    
+        
 
 
 #====================Bucle para publicar===============================
