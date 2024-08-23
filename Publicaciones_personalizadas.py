@@ -29,22 +29,28 @@ hilo_publicar=False
 ####################Constantes END##################
 
 try:
-    print("La dirección del host es: " + str(request.host_url))
-
+    print(f"La dirección del servidor es:{request.host_url}")
 except:
-    app=Flask(__name__)
-    
-    @app.route("/")
+    app = Flask(__name__)
+
+    @app.route('/')
     def index():
-        return True
-    
-    
-    def run_flask():
-        app.run("0.0.0.0", port=5000)
-        
-    
-    hilo_flask=threading.Thread(name="hilo_flask", target=run_flask)
+        return "Hello World"
+
+    def flask():
+        app.run(host="0.0.0.0", port=5000)
+
+
+
+
+
+try:
+    print(f"La dirección del servidor es:{request.host_url}")
+except:
+    hilo_flask=threading.Thread(name="hilo_flask", target=flask)
     hilo_flask.start()
+
+
     
         
 
