@@ -44,27 +44,27 @@ operacion = ""
 
 ####################Constantes END##################
 
-# try:
-#     print(f"La dirección del servidor es:{request.host_url}")
-# except:
-#     app = Flask(__name__)
+try:
+    print(f"La dirección del servidor es:{request.host_url}")
+except:
+    app = Flask(__name__)
 
-#     @app.route('/')
-#     def index():
-#         return "Hello World"
+    @app.route('/')
+    def index():
+        return "Hello World"
 
-#     def flask():
-#         app.run(host="0.0.0.0", port=5000)
-
-
+    def flask():
+        app.run(host="0.0.0.0", port=5000)
 
 
 
-# try:
-#     print(f"La dirección del servidor es:{request.host_url}")
-# except:
-#     hilo_flask=threading.Thread(name="hilo_flask", target=flask)
-#     hilo_flask.start()
+
+
+try:
+    print(f"La dirección del servidor es:{request.host_url}")
+except:
+    hilo_flask=threading.Thread(name="hilo_flask", target=flask)
+    hilo_flask.start()
 
 
     
