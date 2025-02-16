@@ -82,7 +82,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 bot.send_message(call.message.chat.id, "¡Inténtalo de nuevo!")
                 
             except:
-                bot.send_message(call.message.chat.id, f"¡Error!\n\nError intentando crear una nueva publicacion pero sin existir base de datos\n\nDescripcion del error:\n{e}")
+                bot.send_message(call.message.chat.id, "¡Error!\n\nError intentando crear una nueva publicacion pero sin existir base de datos\n\nDescripcion del error:\n{}".format(e))
                     
             
             

@@ -72,10 +72,10 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
                 
             except Exception as err:
 
-                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación en la Base de Datos de Mongo DB\n\nDescripción del error:\n{err}")
+                bot.send_message(call.message.chat.id, "Ha ocurrido un error intentando hacer la operación en la Base de Datos de Mongo DB\n\nDescripción del error:\n{}".format(err))
                 return
             
-        usefull_functions.enviar_mensajes(bot, call, f"¡Copia de Seguridad guardada exitosamente! :D\n\nID de la Copia: {dict_temp[call.from_user.id]["_id"]}\n\n<u>Fecha de guardado</u>:\n{dict_temp[call.from_user.id]["fecha"]}", msg=call.message, delete=True)
+        usefull_functions.enviar_mensajes(bot, call, "¡Copia de Seguridad guardada exitosamente! :D\n\nID de la Copia: {}\n\n<u>Fecha de guardado</u>:\n{}".format(dict_temp[call.from_user.id]["_id"], dict_temp[call.from_user.id]["fecha"]), msg=call.message, delete=True)
         
         if "Copia_Seguridad.zip" in os.listdir():
             os.remove("Copia_Seguridad.zip")
