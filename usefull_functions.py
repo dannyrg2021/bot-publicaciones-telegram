@@ -1,6 +1,7 @@
 import time
 import dill
 import traceback
+import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
 import os
 import sqlite3
@@ -19,6 +20,8 @@ def calcular_diferencia_horaria(HoraHost):
     
     
     #tiempo de diferencia entre el host - la de perú
+    
+
 
     if not isinstance(HoraHost, float):
         HoraHost = time.mktime(HoraHost)
@@ -42,9 +45,12 @@ def calcular_diferencia_horaria(HoraHost):
         
         
 
-def enviar_mensajes(bot, call, texto, markup=False , msg=False):
+def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
+    """
+    msg = objeto Message para editar\n
+    delete = Si es True se eliminará el mensaje anterior y se enviará el actual, en lugar de editar el mensaje anterior especificado , es necesario ingresar el msg
+    """
     
-    #msg = objeto Message para editar
     
 
     if "CallbackQuery" in str(type(call)):
@@ -52,18 +58,26 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False):
         try:
             if markup == False:
                 
-                if not msg == False:
+                
+                if msg != False or delete == True:
                     
-                    try:
-                        mensaje = bot.edit_message_text(texto, call.message.chat.id, msg.id)
+                    if delete == True:
+                        bot.delete_message(call.message.chat.id, msg.message_id)
                         
-                    except Exception as e:
-                        
-                        if "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
+                        mensaje = bot.send_message(call.message.chat.id, texto)
+                    
+                    else:
+                    
+                        try:
+                            mensaje = bot.edit_message_text(texto, call.message.chat.id, msg.message_id)
                             
-                            return
-                        
-                        mensaje = bot.send_message(call.message.chat.id , texto)
+                        except Exception as e:
+                            
+                            if "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
+                                
+                                return
+                            
+                            mensaje = bot.send_message(call.message.chat.id , texto)
                 else:
                     
                     try:
@@ -79,18 +93,27 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False):
         
             
             else:
-                if not msg == False:
+                
+                
+                if msg != False:
                     
-                    try:
-                        mensaje = bot.edit_message_text(texto, call.message.chat.id, msg.id , reply_markup=markup)
+                    if delete == True:
+                        bot.delete_message(call.message.chat.id, msg.message_id)
                         
-                    except Exception as e:
+                        mensaje = bot.send_message(call.message.chat.id, texto, reply_markup=markup)
                         
-                        if "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
+                    else:
+                    
+                        try:
+                            mensaje = bot.edit_message_text(texto, call.message.chat.id, msg.message_id , reply_markup=markup)
                             
-                            return
-                                            
-                        mensaje = bot.send_message(call.message.chat.id , texto , reply_markup=markup)
+                        except Exception as e:
+                            
+                            if "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
+                                
+                                return
+                                                
+                            mensaje = bot.send_message(call.message.chat.id , texto , reply_markup=markup)
                 else:
                 
                     try:
@@ -105,7 +128,7 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False):
                         mensaje = bot.send_message(call.message.chat.id, texto, reply_markup=markup)
                         
         except Exception as error:
-            mensaje = bot.send_message(call.message.chat.id, f"¡Ha ocurrido un error intentando enviar el mensaje!\n\nDescripción del error:\n{e}")
+            mensaje = bot.send_message(call.message.chat.id, f"¡Ha ocurrido un error intentando enviar el mensaje!\n\nDescripción del error:\n{error}")
                     
     else:
         
@@ -117,18 +140,25 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False):
             if markup == False:
                 
                 #si hay msg de ID
-                if not msg == False:
+                if msg != False or delete == True:
                     
-                    try:
-                        mensaje = bot.edit_message_text(texto, message.chat.id, msg.message_id)
+                    if delete == True:
+                        bot.delete_message(call.message.chat.id, msg.message_id)
                         
-                    except Exception as e:
+                        mensaje = bot.send_message(call.message.chat.id, texto)
                         
-                        if "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
+                    else:
+                    
+                        try:
+                            mensaje = bot.edit_message_text(texto, message.chat.id, msg.message_id)
                             
-                            return
-                                            
-                        mensaje = bot.send_message(message.chat.id , texto)
+                        except Exception as e:
+                            
+                            if "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
+                                
+                                return
+                                                
+                            mensaje = bot.send_message(message.chat.id , texto)
                 
                 #si NO hay msg de ID
                 else:
@@ -137,25 +167,32 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False):
             #si hay markup
             else:
                 
-                if not msg == False:
+                if msg != False:
                     
-                    try:
-                        mensaje = bot.edit_message_text(texto, message.chat.id, msg.message_id , reply_markup=markup)
+                    if delete == True:
+                        bot.delete_message(call.message.chat.id, msg.message_id)
                         
-                    except Exception as e:
+                        mensaje = bot.send_message(call.message.chat.id, texto, reply_markup=markup)
                         
-                        if "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
+                    else:
+                    
+                        try:
+                            mensaje = bot.edit_message_text(texto, message.chat.id, msg.message_id , reply_markup=markup)
                             
-                            return
-                                            
-                        mensaje = bot.send_message(message.chat.id , texto , reply_markup=markup)
+                        except Exception as e:
+                            
+                            if "message is not modified: specified new message content and reply markup are exactly the same as a current content and reply markup of the message" in str(e.args):
+                                
+                                return
+                                                
+                            mensaje = bot.send_message(message.chat.id , texto , reply_markup=markup)
                         
                 else:
                     
                     mensaje = bot.send_message(message.chat.id, texto, reply_markup=markup)
                     
         except Exception as error:
-            mensaje = bot.send_message(call.message.chat.id, f"¡Ha ocurrido un error intentando enviar el mensaje!\n\nDescripción del error:\n{e}")
+            mensaje = bot.send_message(call.message.chat.id, f"¡Ha ocurrido un error intentando enviar el mensaje!\n\nDescripción del error:\n{error}")
            
         
             
@@ -194,6 +231,7 @@ def cargar_variables():
         
     
     return lote_publicaciones
+    
     
 
 def guardar_variables(lote_publicaciones , guardar="all"):
@@ -561,13 +599,13 @@ def ver_publicaciones(call, bot, user, cursor, indice, lote_publicaciones, opera
     # operacion = "del_publicaciones" para borrar
     # operacion = "ver_publicaciones" para ver
     
-   
+    
     for indicef,publicacion in enumerate(lote_publicaciones, start=0):
         
         
         try:
             #al mandar el callback_data se enviará el nombre del elemento en el diccionario (lote_publicaciones), para obtenerlo es preciso usar re para buscar el nombre en el propio callback (ej: callback_data = "ver_publicaciones_index:objeto_1_markup"), extraer el nombre del elemento (va seguido de ":") y usar el metodo .get() de los diccionarios 
-            lista_inline.append(InlineKeyboardButton(f"{indice + 1}", callback_data=f"{operacion}_index:{publicacion}")) 
+            lista_inline.append(InlineKeyboardButton(f"{lote_publicaciones[publicacion].ID}", callback_data=f"{operacion}_index:{publicacion}")) 
                 
             indice+=1
             
@@ -609,10 +647,11 @@ def ver_publicaciones(call, bot, user, cursor, indice, lote_publicaciones, opera
     markup_publicacion.row(InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu"))
     
     if operacion == "ver_publicaciones":
-        enviar_mensajes(bot, call, "👇 Lista de Publicaciones 👇\nPresiona en alguna para <b>VER</b> más información acerca de esta\n\n(#ID de Publicación)", markup_publicacion)
+        msg = enviar_mensajes(bot, call, "👇 Lista de Publicaciones 👇\nPresiona en alguna para <b>VER</b> más información acerca de esta\n\n(#ID de Publicación)", markup_publicacion)
         
     else:
-        enviar_mensajes(bot, call, "👇 Lista de Publicaciones 👇\nPresiona en alguna para <b>ELIMINAR</b> esta publicación\n\n(#ID de Publicación)", markup_publicacion)
+        msg = enviar_mensajes(bot, call, "👇 Lista de Publicaciones 👇\nPresiona en alguna para <b>ELIMINAR</b> esta publicación\n\n(#ID de Publicación)", markup_publicacion)
+        
 
             
             
@@ -798,8 +837,9 @@ def agregar_canal_publicacion(bot, call, indice, lista_seleccionada, cursor):
     
     
 def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
+
     
-    
+
     try:
         conexionDB = pymongo.MongoClient(host_url)
         
@@ -808,7 +848,14 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
         collection = db["CopiaSeguridad"]
         
     except Exception as e:
-        bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando conectarme a la Base de Datos de Mongo DB\n\nDescripción del error:\n{e}")
+        try:
+            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search("error=.*timeout", e.args[0]).group().split("(")[1]}")
+        except:
+            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
+            
+        return "Error"
+            
+
     
     
     
@@ -817,11 +864,11 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
         
         try:
             
-            dict_temp[call.from_user.id] = collection.count_documents({})
+            dict_temp[call.from_user.id] = collection.count_documents({}) + 1 
             
             collection.insert_one(
-                {"_id": collection.count_documents({}),
-                "fecha" : time.localtime(),
+                {"_id": dict_temp[call.from_user.id],
+                "fecha" : time.time(),
                 "archivo" : archivo.read()
                 }
                 )
@@ -830,24 +877,58 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
             
         except Exception as e:
             try:
+
+                #Se puede producir una excepción si el "_id" asignado arriba ya coincide con el de otro archivo
             
                 dict_temp[call.from_user.id] = random.randint(1, 1000)
                 
                 collection.insert_one(
                     {"_id": dict_temp[call.from_user.id],
-                    "fecha" : time.localtime(),
+                    "fecha" : time.time(),
                     "archivo" : archivo.read()
                     }
                     )
                 
-            except:
-                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: <{operacion}> en la Base de Datos de Mongo DB\n\nDescripción del error:\n{e}")
+            except Exception as e:
+                contador= 0
+                while contador != "OK":
+                    
+                    bot.send_message(call.message.chat.id, f"Intento {str(contador+1)} de 5 para conectar con la Base de Datos")
+                
+                    try:
+                        #Se puede producir una excepción si el "_id" asignado arriba ya coincide con el de otro archivo
+                        
+                        collection.insert_one(
+                            {"_id": random.randint(1, 1000),
+                            "fecha" : time.time(),
+                            "archivo" : archivo.read()
+                            }
+                            )
+                        
+                        contador = "OK"
+                        
+                    except Exception as e:
+                        if contador >= 4:
+                            try:
+                                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search("error=.*timeout", e.args[0]).group().split("(")[1]}")
+                            except:
+                                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
+                                
+                            return "Error"
+                        
+                        else:
+                            contador += 1
+                            
+                        pass
             
             
             
         dict_temp[call.from_user.id] = collection.find_one({"_id": dict_temp[call.from_user.id]})
         
-        return {"_id": dict_temp[call.from_user.id]["_id"], "fecha" : time.strftime(r"<u>Hora</u>: %H:%M%p <u>Fecha</u>: %d/%m/%Y", time.localtime(calcular_diferencia_horaria(dict_temp[call.from_user.id]["fecha"])))}
+        return {"_id": dict_temp[call.from_user.id]["_id"], "fecha" : time.strftime(f"<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y", time.localtime(calcular_diferencia_horaria(dict_temp[call.from_user.id]["fecha"])))}
+    
+    
+    
     
     
     
@@ -857,16 +938,34 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
         
         try:
             if collection.count_documents({}) == 0:
-                enviar_mensajes(bot, call, "¡No hay ninguna copia de seguridad guardada en la base de datos!")
+                bot.send_message(call.message.chat.id, "¡No hay ninguna copia de seguridad guardada en la base de datos!\n\nOperación Cancelada")
+                
+                return
                 
         except Exception as e:
-            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: <{operacion}> en la Base de Datos de Mongo DB\n\nDescripción del error:\n{e}")
+            try:
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search("error=.*timeout", e.args[0]).group().split("(")[1]}")
+            except:
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
+                
+            return "Error"
         
         lista = collection.find({}).to_list()
         
         for diccionario in lista:
             
-            bot.send_document(call.message.chat.id, diccionario["archivo"], caption=f"ID de archivo: {diccionario["_id"]}\nFecha Creación:{time.strftime(r"Hora:%H:%M %p Fecha:%d/%m/%Y", time.localtime(calcular_diferencia_horaria(diccionario["fecha"])))}", reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Cargar Archivo 💫", callback_data=f"db_cargar:{diccionario["_id"]}")], [InlineKeyboardButton("Eliminar Archivo 💥", callback_data=f"db_eliminar:{diccionario["_id"]}")]]))
+
+            bot.send_document(call.message.chat.id, diccionario["archivo"], caption=f"ID de archivo: {diccionario["_id"]}\n\n<u>Fecha Creación</u>:\n{time.strftime("<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y", time.localtime(calcular_diferencia_horaria(diccionario["fecha"])))}", reply_markup = InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("Cargar Archivo 💫", callback_data=f"db_cargar:{diccionario["_id"]}")], [InlineKeyboardButton("Eliminar Archivo 💥", callback_data=f"db_eliminar:{diccionario["_id"]}")]
+                    ]
+                ))
+            
+        return
+            
+            
+            
+            
             
             
     elif operacion == "eliminar":
@@ -875,7 +974,12 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
             collection.delete_one({"_id": id})
             
         except Exception as e:
-            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: <{operacion}> en la Base de Datos de Mongo DB\n\nDescripción del error:\n{e}")
+            try:
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search("error=.*timeout", e.args[0]).group().split("(")[1]}")
+            except:
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
+                
+            return "Error"
         
         return
     
@@ -898,6 +1002,11 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
     except Exception as e:
         if "no such table" in e.args[0] :
             conexion, cursor = cargar_conexion()
+            pass
+            
+        else:
+            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando crear el canal\n\nDescripción del error:\n{e}")    
+        
     
 
     #Comprobaré si el usuario pasó una lista de canales

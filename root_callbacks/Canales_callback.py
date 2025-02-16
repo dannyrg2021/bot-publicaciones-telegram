@@ -76,15 +76,31 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
         
     except Exception as e:
         
-        if "no such table" in  e.args[0]:
+        if "closed cursor" in e.args[0]:
+            try:
+                conexion, cursor = usefull_functions.cargar_conexion()
+                bot.send_message(call.message.chat.id, "¡Inténtalo de nuevo!")
+                
+            except:
+                bot.send_message(call.message.chat.id, f"¡Error!\n\nError intentando crear una nueva publicacion pero sin existir base de datos\n\nDescripcion del error:\n{e}")
+                    
+            
+            
+        elif "no such table" in e.args[0]:
+            
             conexion, cursor = usefull_functions.cargar_conexion()
             
-            msg = bot.send_message(call.message.chat.id, "No hay ningún canal en la Base de Datos como para crear una nueva publicacion!\n\nDebes de ingresar un canal en el que publicar primero.\nA continuación de este mensaje ingresa el ID o @username de un canal o grupo en cuestion", reply_markup = telebot.types.ForceReply())
+            msg = bot.send_message(call.message.chat.id, "No hay ningún canal en la Base de datos como para crear una nueva publicacion!", reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Añadir Canal(es)", callback_data="anadir_canal")]]))
             
-            bot.register_next_step_handler(msg ,usefull_functions.channel_register , bot, call, cursor, conexion, lote_publicaciones)
+            bot.register_next_step_handler(msg , usefull_functions.channel_register, bot, call, cursor, conexion, lote_publicaciones)
+            
+            
             
         else:
-            bot.send_message(call.message.chat.id, f"¡Error!\n\nError al percatarme de que no hay base de datos en Canales_callback\n\nDescripcion del error:\n{e}")
+            bot.send_message(call.message.chat.id, f"¡Error!\n\nError intentando crear una nueva publicacion pero sin existir base de datos\n\nDescripcion del error:\n{e}")
+        
+        
+        return
     
     
     

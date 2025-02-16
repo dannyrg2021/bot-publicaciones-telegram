@@ -32,38 +32,63 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
     if call.data=="copia_seguridad":
         
 
-        bot.send_message(call.from_user.id,"<b>Explicación</b>:\nEn este apartado puedes mantener mi información a salvo en caso de pérdida o error por parte del servidor dónde estoy alojado como bot\nDispones de 2 opciones:\n\n1- Guardar Copia:\nCon esta opción guardaré mis datos EN SU ESTADO ACTUAL, si se agregan más canales o publicaciones que deseas conservar y guardar en caso de error es recomendable hacer otra copia. Esta copia de seguridad se guarda en un clúster de MongoDB junto con todas las otras hechas en el pasado\n\n2- Cargar Copias:\nAquí te mostraré todas las copias que he guardado anteriormente y decidirás sobre cuál usar\n<b>ADVERTENCIA IMPORTANTE!:</b>\nCuando cargue los datos de un archivo, los datos que tenía actualmente serán ELIMINADOS. Debes de estar muy seguro de lo que vas a hacer", reply_markup=ReplyKeyboardRemove())
-        markup=InlineKeyboardMarkup(row_width=1).add(
-            InlineKeyboardButton("Guardar Copia 💾", callback_data="db_guardar"),
-            InlineKeyboardButton("Cargar Copias 💫", callback_data="db_cargar")
-            )
-        bot.send_message(call.from_user.id, "Muy bien, qué planeas hacer?", reply_markup=markup)
+        bot.send_message(call.from_user.id,"<b>Explicación</b>:\nEn este apartado puedes mantener mi información a salvo en caso de pérdida o error por parte del servidor dónde estoy alojado como bot\nDispones de 2 opciones:\n\n1- Guardar Copia:\nCon esta opción guardaré mis datos EN SU ESTADO ACTUAL, si se agregan más canales o publicaciones que deseas conservar y guardar en caso de error es recomendable hacer otra copia. Esta copia de seguridad se guarda en un clúster de MongoDB junto con todas las otras hechas en el pasado\n\n2- Cargar Copias:\nAquí te mostraré todas las copias que he guardado anteriormente y decidirás sobre cuál usar\n<b>ADVERTENCIA IMPORTANTE!:</b>\nCuando cargue los datos de un archivo, los datos que tenía actualmente serán ELIMINADOS. Debes de estar muy seguro de lo que vas a hacer\n\nMuy bien, qué planeas hacer?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Guardar Copia 💾", callback_data="db_guardar")], [InlineKeyboardButton("Cargar Copias 💫", callback_data="db_cargar")]]))
         
         
         
     elif "db_guardar" in call.data:
         
-        with zip("Copia_Seguridad", "w") as archivo_comprimido:
+
+        
+        with zip("Copia_Seguridad.zip", "w") as archivo_comprimido:
         
             
             if "BD_Canales.db" in os.listdir():
                 archivo_comprimido.write("BD_Canales.db")
                 
+            else:
+                usefull_functions.enviar_mensajes(bot, call, "¡No se pudo guardar la copia de seguridad!\n¡No hay ningún canal ni publicación guardada en el bot!")
+                conexion, cursor = usefull_functions.cargar_conexion()
+                
+                return
+                
             if "publicaciones.dill" in os.listdir():
                 archivo_comprimido.write("publicaciones.dill")
                 
-        with open("Copia_Seguridad", "rb") as archivo_comprimido:
-        
-            dict_temp[call.from_user.id]=usefull_functions.operaciones_DB(call, bot, host_url, "guardar", archivo_comprimido)
+            else:
+                usefull_functions.enviar_mensajes(bot, call, "¡No se pudo guardar la copia de seguridad!\n¡No hay ninguna publicación guardada en el bot!")
+                return
+                
+        with open("Copia_Seguridad.zip", "rb") as archivo_comprimido:
+            try:
+                dict_temp[call.from_user.id]=usefull_functions.operaciones_DB(call, bot, host_url, "guardar", archivo_comprimido)
+                
+
+                
+                if isinstance(dict_temp[call.from_user.id], str):
+                    if dict_temp[call.from_user.id].lower() == "error":
+                        return
+                        
+                
+            except Exception as err:
+
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación en la Base de Datos de Mongo DB\n\nDescripción del error:\n{err}")
+                return
             
-        usefull_functions.enviar_mensajes(bot, call, f"¡Copia de Seguridad guardada exitosamente! :D\n\nID de la Copia: {dict_temp[call.from_user.id]["_id"]}\n\nFecha de guardado:\n {dict_temp[call.from_user.id]["fecha"]}")
+        usefull_functions.enviar_mensajes(bot, call, f"¡Copia de Seguridad guardada exitosamente! :D\n\nID de la Copia: {dict_temp[call.from_user.id]["_id"]}\n\n<u>Fecha de guardado</u>:\n{dict_temp[call.from_user.id]["fecha"]}", msg=call.message, delete=True)
         
+        if "Copia_Seguridad.zip" in os.listdir():
+            os.remove("Copia_Seguridad.zip")
+            
         
         return
+    
+    
     
     elif "db_cargar" in call.data:
         if os.path.isfile("BD_Canales_prueba.db"):
             os.remove("BD_Canales_prueba.db")
+            
             
         if hilo_publicaciones_activo==True:
             bot.send_message(call.from_user.id, "No puedo cargar los ficheros mientras estoy publicando!, ¡Detén el hilo de publicaciones primero y luego regresa!\n\nTe devuelvo atrás")
@@ -71,6 +96,9 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
         
         
         if ":" in call.data:
+            
+            
+            
             
             conexionDB = pymongo.MongoClient(host_url)
     
@@ -84,17 +112,23 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
             dict_temp[call.from_user.id] = collection.find_one({"_id" : int(re.search(r":.*", call.data).group().replace(":", ""))})
         
                 
-            with open("DB.zip", "wb") as file:
+            with open("Copia_Seguridad.zip", "wb") as file:
                 file.write(dict_temp[call.from_user.id]["archivo"])
                 
             
             cursor = cursor.close()
             conexion = conexion.close()
             
-            os.remove("BD_Canales.db")
-            os.remove("publicaciones.dill")
+            try:
+                os.remove("BD_Canales.db")
+            except:
+                pass
+            try:
+                os.remove("publicaciones.dill")
+            except:
+                pass
             
-            with zip("DB.zip", "r") as comprimido:
+            with zip("Copia_Seguridad.zip", "r") as comprimido:
                 comprimido.extractall(".")
             
             conexion = sqlite3.connect("BD_Canales.db")
@@ -104,13 +138,16 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
             
             bot.send_message(call.message.chat.id, "Copia cargada exitosamente :D\n\n/panel para regresar")
             
-            return
+            os.remove("Copia_Seguridad.zip")
+            
+            return lote_publicaciones
                     
                 
                 
         else:
-        
             usefull_functions.operaciones_DB(call, bot, host_url, "ver")
+            
+            
             
     elif "db_eliminar" in call.data: 
         usefull_functions.operaciones_DB(call, bot, host_url, "eliminar", id=int(re.search(r":.*", call.data).group().replace(":", "")))

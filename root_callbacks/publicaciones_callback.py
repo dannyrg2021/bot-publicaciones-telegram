@@ -1,6 +1,7 @@
 import usefull_functions
 import root_callbacks.Canales_callback as Canales_callback
 from Publicaciones_class import Publicaciones
+import random
 import re
 import threading
 import time
@@ -79,7 +80,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
     global l_operacion
     
     
-
+    
         
     
     if call.data=="publicacion" or "publicacion/c" in call.data:
@@ -94,6 +95,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             
             if not msg == False:
                 bot.delete_message(msg.chat.id , msg.message_id)
+            
             
             
             if not lista:
@@ -324,13 +326,21 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                     if markup_botones_mensaje:
                         nombre=f"Objeto_{len(lote_publicaciones)+1}_markup"
                         
-                        globals()[nombre]=Publicaciones(len(lote_publicaciones)+1,texto_publicacion, canales_seleccionados, int(message.text)*60,archivo_multimedia , markup_botones_mensaje)
+                        while lote_publicaciones.get(nombre):
+                            print("ID para la publicación no disponible...Buscaré otro")
+                            nombre = nombre=f"Objeto_{random.randint(1, len(lote_publicaciones)*5)}_markup"
+                        
+                        globals()[nombre]=Publicaciones(re.search(r"\d", nombre).group(),texto_publicacion, canales_seleccionados, int(message.text)*60,archivo_multimedia , markup_botones_mensaje)
                         lote_publicaciones[nombre]=globals()[nombre]
                         
                     else:
                         nombre=f"Objeto_{len(lote_publicaciones)+1}_nonmarkup"
                         
-                        globals()[nombre]=Publicaciones(len(lote_publicaciones)+1, texto_publicacion, canales_seleccionados, int(message.text)*60, archivo_multimedia)
+                        while lote_publicaciones.get(nombre):
+                            print("ID para la publicación no disponible...Buscaré otro")
+                            nombre = nombre=f"Objeto_{random.randint(1, len(lote_publicaciones)*5)}_nonmarkup"
+                        
+                        globals()[nombre]=Publicaciones(re.search(r"\d", nombre).group(), texto_publicacion, canales_seleccionados, int(message.text)*60, archivo_multimedia)
                         lote_publicaciones[nombre]=globals()[nombre]
                         
                 cuestion=bot.send_message(message.chat.id, "La publicación en cuestión es la siguiente:")
@@ -461,18 +471,31 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                     
                 except Exception as e:
                     
-                    if "no such table" in  e.args[0]:
+                    if "closed cursor" in e.args[0]:
+                        try:
+                            conexion, cursor = usefull_functions.cargar_conexion()
+                            process_publish(message, "agregar", conexion, cursor)
+                            
+                        except:
+                            bot.send_message(message.chat.id, f"¡Error!\n\nError intentando crear una nueva publicacion pero sin existir base de datos\n\nDescripcion del error:\n{e}")
+                            
+                    
+                    
+                    elif "no such table" in  e.args[0]:
                         
                         conexion, cursor = usefull_functions.cargar_conexion()
                         
                         msg = bot.send_message(message.chat.id, "No hay ningún canal en la Base de datos como para crear una nueva publicacion!", reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Añadir Canal(es)", callback_data="anadir_canal")]]))
                         
                         bot.register_next_step_handler(msg , usefull_functions.channel_register, bot, call, cursor, conexion, lote_publicaciones)
-                        return
+                        
+                        
                         
                     else:
                         bot.send_message(message.chat.id, f"¡Error!\n\nError intentando crear una nueva publicacion pero sin existir base de datos\n\nDescripcion del error:\n{e}")
-                        return
+                    
+                    
+                    return
                         
                         
                 if not dict_temp[call.from_user.id]:
@@ -1159,7 +1182,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             #     dict_temp[call.from_user.id]+="<b>Tiempo restante para su próxima publicación</b>: " + str(publicacion.proxima_eliminacion//60//60 - time.time()).replace("-", "") + " hora(s) / " +  str(publicacion.proxima_eliminacion//60 - time.time()).replace("-", "") + " minuto(s) / " + str(publicacion.proxima_eliminacion - time.time()).replace("-", "") + " segundo(s)" + "\n\n"
     
             
-            
+
             
             markup=InlineKeyboardMarkup(row_width=1)
             
@@ -1170,8 +1193,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             # El tiempo de mi cliente Danny es el de Perú - Lima, el mismo que el de Cuba, para hallar un tiempo fijo, independientemente de dónde sea el host, voy a usar el time.gmtime() que tiene 5 horas de adelanto y restarle las horas para que dé la adecuada
             markup.row(InlineKeyboardButton("Cambiar hora de Envío ⌛", callback_data=f"ver_publicaciones_config/time_to_post:{re.search(r":.*", call.data).group().replace(":", "")}")) 
             markup.row(InlineKeyboardButton("Cambiar tiempo de repetición de envío 🔃", callback_data=f"ver_publicaciones_config/change_time:{re.search(r":.*", call.data).group().replace(":", "")}"))
-            markup.row(InlineKeyboardButton("Agregar/Eliminar canales de la Publicación 👥", callback_data=f"ver_publicaciones_config/change_channels:{re.search(r":.*", call.data).group().replace(":", "")}"));
-            markup.row(InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu"))
+            markup.row(InlineKeyboardButton("Agregar/Eliminar canales de la Publicación 👥", callback_data=f"ver_publicaciones_config/change_channels:{re.search(r":.*", call.data).group().replace(":", "")}"))
                                 
             
             
@@ -1205,42 +1227,42 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 #extraigo el string del diccionario de la publicación
                 n_publicacion = re.search(r":.*", call.data).group().replace(":", "")
                     
-                copia_lote_publicaciones=lote_publicaciones.copy()
+                # copia_lote_publicaciones=lote_publicaciones.copy()
 
                 if lote_publicaciones[n_publicacion].multimedia:
                     
                     try:
-                        os.remove(copia_lote_publicaciones[n_publicacion].multimedia[0])
+                        os.remove(lote_publicaciones[n_publicacion].multimedia[0])
                         
                     except Exception as e:
                         bot.send_message(call.from_user.id, f"Por alguna razón no se ha podido eliminar el fichero adjunto a la publicación\nComúnicale a @mistakedelalaif\n\n<u>Descripción del error</u>:\n{e}")
                     
-                del copia_lote_publicaciones[n_publicacion]
+                del lote_publicaciones[n_publicacion]
 
                 
-                lote_publicaciones.clear()
+                # lote_publicaciones.clear()
                     
-                #Lo que haré con este for será volver a rellener a {lote_publicaciones} con los datos que quedan de {copia_lote_publicaciones}    
-                for publicacion in copia_lote_publicaciones:
+                # #Lo que haré con este for será volver a rellener a {lote_publicaciones} con los datos que quedan de {copia_lote_publicaciones}    
+                # for publicacion in copia_lote_publicaciones:
                     
-                    #nombre_publicacion=f"Objeto_3_nonmarkup" or nombre=f"Objeto_3_markup"
-                    nombre_publicacion=publicacion.replace(re.search(r"_\d+_", publicacion).group(), f"_{len(lote_publicaciones)+1}_")
-                    lote_publicaciones[nombre_publicacion]=copia_lote_publicaciones[publicacion]
-                    lote_publicaciones[nombre_publicacion].ID=len(lote_publicaciones)+1
+                #     #nombre_publicacion=f"Objeto_3_nonmarkup" or nombre=f"Objeto_3_markup"
+                #     nombre_publicacion=publicacion.replace(re.search(r"_\d+_", publicacion).group(), f"_{publicacion.ID}_")
+                #     lote_publicaciones[nombre_publicacion]=copia_lote_publicaciones[publicacion]
+                #     lote_publicaciones[nombre_publicacion].ID=len(lote_publicaciones)+1
                     
                     
-                    # os.path.basename= "1_ejemplo.jpg"
-                    if lote_publicaciones[nombre_publicacion].multimedia:
-                        nombre=os.path.basename(lote_publicaciones[nombre_publicacion].multimedia[0])
+                #     # os.path.basename= "1_ejemplo.jpg"
+                #     if lote_publicaciones[nombre_publicacion].multimedia:
+                #         nombre=os.path.basename(lote_publicaciones[nombre_publicacion].multimedia[0])
                         
 
-                        nombre=nombre.replace(re.search(r"\d+_", nombre).group(), "", 1)
+                #         nombre=nombre.replace(re.search(r"\d+_", nombre).group(), "", 1)
                         
-                        nombre_archivo=f"{os.path.dirname(lote_publicaciones[nombre_publicacion].multimedia[0])}{OS}{len(lote_publicaciones)}_{nombre}"
+                #         nombre_archivo=f"{os.path.dirname(lote_publicaciones[nombre_publicacion].multimedia[0])}{OS}{len(lote_publicaciones)}_{nombre}"
                         
-                        os.rename(lote_publicaciones[nombre_publicacion].multimedia[0], nombre_archivo)
+                #         os.rename(lote_publicaciones[nombre_publicacion].multimedia[0], nombre_archivo)
                         
-                        lote_publicaciones[nombre_publicacion].multimedia=[os.path.abspath(nombre_archivo), lote_publicaciones[nombre_publicacion].multimedia[1]]
+                #         lote_publicaciones[nombre_publicacion].multimedia=[os.path.abspath(nombre_archivo), lote_publicaciones[nombre_publicacion].multimedia[1]]
                 
                 guardar_variables(lote_publicaciones)
             

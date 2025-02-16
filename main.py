@@ -21,7 +21,9 @@ from flask import Flask, request
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
-HOST_URL = os.environ["mongodb_url"]
+# HOST_URL = os.environ["mongodb_url"]
+HOST_URL = "mongodb://localhost:27017"
+
 
 #----------------Variables------------------------
 telebot.apihelper.ENABLE_MIDDLEWARE = True
@@ -29,7 +31,7 @@ bot=telebot.TeleBot(os.environ["token"], "html", disable_web_page_preview=True)
 
 
 # admin=1413725506
-admin = os.environ["token"]
+admin = os.environ["admin"]
 lote_publicaciones={}
 lista_canales=[]
 lista_seleccionada=[]
@@ -37,7 +39,7 @@ if os.name=="nt":
     OS="\\"
 else:
     OS="/"
-    
+
 hilo_publicaciones_activo=False
 hilo_publicar=False
 dic_temp = {}
@@ -56,8 +58,6 @@ except:
 
     def flask():
         app.run(host="0.0.0.0", port=5000)
-
-
 
 
 
@@ -184,7 +184,7 @@ def agregar_multimedia(publicacion, message):
             archivo.write(bot.download_file(bot.get_file(message.audio.file_id).file_path))
             publicacion.multimedia=[os.path.abspath(archivo.name), "audio"]
     
-    
+
 
             
     elif message.content_type=="document":
@@ -215,8 +215,14 @@ bot.set_my_commands([
 
 @bot.middleware_handler()
 def revision(bot, update):
+    global cursor
     if update.callback_query:
         print(update.callback_query.data)
+        try:
+            cursor.execute("SELECT ID FROM CANALES")
+        except:
+            conexion, cursor = usefull_functions.cargar_conexion()
+
         
     return
 
@@ -315,11 +321,14 @@ def cmd_panel(message):
         if not message.chat.type == "private":
             bot.send_message(message.chat.id, "Tienes que hacer esta petición en mi chat privado")
             return
-
-        if not "N" in call.data:
-            usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel, message)
-            
-        else:
+        try:
+            if not "N" in call.data:
+                usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel, message)
+                
+            else:
+                usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel)
+                
+        except:
             usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel)
         
     return
