@@ -1,3 +1,4 @@
+import telebot.ext
 import usefull_functions 
 import root_callbacks.Canales_callback as Canales_callback
 import root_callbacks.publicaciones_callback as publicaciones_callback
@@ -12,6 +13,7 @@ import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand
 import dill
 from flask import Flask, request
+from telebot.ext import M
 
 
 
@@ -69,7 +71,7 @@ except:
 
 
     
-        
+       
 
 
 # Bucle para Publicar
