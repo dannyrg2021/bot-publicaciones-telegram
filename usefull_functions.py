@@ -956,7 +956,8 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
         for diccionario in lista:
             
 
-            bot.send_document(call.message.chat.id, diccionario["archivo"], caption=f"ID de archivo: {diccionario['_id']}\n\n<u>Fecha Creación</u>:\n{time.strftime('<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y', time.localtime(calcular_diferencia_horaria(diccionario['fecha'])))}", reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Cargar Archivo 💫", callback_data=f"db_cargar:{diccionario["_id"]}")], [InlineKeyboardButton("Eliminar Archivo 💥", callback_data=f"db_eliminar:{diccionario["_id"]}")]]))
+            bot.send_document(call.message.chat.id, diccionario["archivo"], caption="ID de archivo: {}\n\n<u>Fecha Creación</u>:\n{}".format(diccionario['_id'], time.strftime('<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y', time.localtime(calcular_diferencia_horaria(diccionario['fecha'])))), reply_markup = InlineKeyboardMarkup([[InlineKeyboardButton("Cargar Archivo 💫", callback_data=f"db_cargar:{diccionario["_id"]}")], [InlineKeyboardButton("Eliminar Archivo 💥", callback_data=f"db_eliminar:{diccionario["_id"]}")]]))
+            
             
         return
             
