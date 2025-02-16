@@ -849,7 +849,8 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
         
     except Exception as e:
         try:
-            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search("error=.*timeout", e.args[0]).group().split("(")[1]}")
+            print(e)
+            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
         except:
             bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
             
@@ -910,7 +911,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
                     except Exception as e:
                         if contador >= 4:
                             try:
-                                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search("error=.*timeout", e.args[0]).group().split("(")[1]}")
+                                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
                             except:
                                 bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
                                 
@@ -944,7 +945,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
                 
         except Exception as e:
             try:
-                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search("error=.*timeout", e.args[0]).group().split("(")[1]}")
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
             except:
                 bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
                 
@@ -975,7 +976,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
             
         except Exception as e:
             try:
-                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search("error=.*timeout", e.args[0]).group().split("(")[1]}")
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
             except:
                 bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
                 
