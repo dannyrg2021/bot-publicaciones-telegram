@@ -153,7 +153,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 usefull_functions.ver_canal(call ,bot, call.from_user.id, int(re.search(r":.*", call.data).group().replace(":", "")), cursor)
                 
         else:
-            bot.answer_callback_query(call.id, f"Nombre del canal: {bot.get_chat(int(re.search(r":.*", call.data).group().replace(":", ""))).title}\nTipo de Chat: {bot.get_chat(int(re.search(r":.*", call.data).group().replace(":", ""))).type}\nSub Totales: {bot.get_chat_member_count(int(re.search(r":.*", call.data).group().replace(":", "")))}\nAdministradores en el chat: {len(bot.get_chat_administrators(int(re.search(r":.*", call.data).group().replace(":", ""))))}", True)
+            bot.answer_callback_query(call.id, "Nombre del canal: {}\nTipo de Chat: {}\nSub Totales: {}\nAdministradores en el chat: {}".format(bot.get_chat(int(re.search(r":.*", call.data).group().replace(":", ""))).title, bot.get_chat(int(re.search(r":.*", call.data).group().replace(":", ""))).type, bot.get_chat_member_count(int(re.search(r":.*", call.data).group().replace(":", ""))), len(bot.get_chat_administrators(int(re.search(r":.*", call.data).group().replace(":", ""))))), True)
             
             
             bot.get_chat(int(re.search(r":.*", call.data).group().replace(":", ""))).title

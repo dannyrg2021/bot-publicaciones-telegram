@@ -13,7 +13,6 @@ import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand
 import dill
 from flask import Flask, request
-from telebot.ext import M
 
 
 
