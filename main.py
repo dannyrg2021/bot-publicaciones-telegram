@@ -72,7 +72,6 @@ except:
     
        
 
-
 # Bucle para Publicar
 
 
@@ -253,6 +252,13 @@ def cmd_start(message):
     
     bot.send_message(message.chat.id, f"Bienvenido {bot.get_chat(admin).first_name} :D\n\nSoy un bot que hace mensajes personalizados y los envía a una serie de canales (Si estoy autorizado a publicar en ellos claro...)\nPuedes definir el tiempo de duración de las publicaciones y los canales a los que serán dirigidos los mensajes, por supuesto\n\nEnvíame /panel para comenzar :)")
     bot.send_message(message.chat.id, "Bot creado por @mistakedelalaif")
+    
+    
+    
+@bot.message_handler(commands=["host"])
+def cmd_host_information(message):
+    bot.send_message(message.chat.id, "La hora actual del host es: " + str(time.localtime()))
+    
 
 
 

@@ -1280,6 +1280,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 msg=bot.send_message(call.from_user.id, "‼Alerta‼ : Esta configuración está adecuada para la zona horaria de Lima/Perú, si tienes dudas contacta con @mistakedelalaif\n\nCon esta opción programarás la Publicación para que sea enviada en una fecha concreta\nA continuación envía la hora en el siguiente formato:\n\n <code>Hora:Minuto:Día:Mes:Año</code>\n\n\n<u>Ejemplo de uso</u>:\n<code>17:35:2:7:2030</code>\n\n(La hora debe estar representada en formato de 24 horas [00-23]el mes debe estar representado en formato númerico [1-12] y el año debe estar representado con sus 4 digitos, no con los últimos 2)\n\n\nA continuación de este mensaje, envía la programación deseada teniendo en cuenta lo explicado, si quieres cancelar pulsa en el botón 'Cancelar Operación'", reply_markup=telebot.types.ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
                 
                 print("La hora local del host es: " + str(time.localtime()))
+                print("La hora en perú es de: " + str(time.localtime(usefull_functions.calcular_diferencia_horaria(devolver="hora_peru"))))
                 
                 def time_to_post_register(message, publicacion, lote_publicaciones=lote_publicaciones, hilo_publicaciones_activo=hilo_publicaciones_activo):
 
@@ -1320,15 +1321,16 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                     try:
                         dict_temp[message.from_user.id]=time.mktime(time.strptime(f"{dict_temp[message.from_user.id][0]}:{dict_temp[message.from_user.id][1]}:{dict_temp[message.from_user.id][2]}:{dict_temp[message.from_user.id][3]}:{dict_temp[message.from_user.id][4]}", r"%H:%M:%d:%m:%Y"))
 
+
+                        hora = usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id])
                         
-                        #Aquí calculo el tiempo de diferencia entre la fecha establecida y la de perú, perú tiene 5 horas de atraso con la que se obtiene del método time.gmtime(), el cual es un horario fijo
-                        dict_temp[message.from_user.id] = usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id])
+                    
                         
                         
 
                         
                         
-                        if str(dict_temp[message.from_user.id]).startswith("-"):
+                        if str(hora).startswith("-"):
                             bot.send_message(message.chat.id, "¡Has establecido una programación futura menor al horario actual en Perú!\n\nOperación cancelada", reply_markup=ReplyKeyboardRemove())
                             return
                         
@@ -1337,38 +1339,14 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                         #     return
                         
                         
-                        #tiempo de diferencia entre el host - la de perú
-                        tiempo_diferencia=time.mktime(time.localtime()) - time.mktime(time.gmtime(time.time() - 18000))
+                        bot.send_message(message.chat.id, "La Publicación se enviará {}\n\n¡El hilo de publicación ha sido activado!".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id], "hora_peru")))), reply_markup=ReplyKeyboardRemove())
+                            
+                            
+                        lote_publicaciones[publicacion].proxima_publicacion = hora
                         
                         
                         
-                        #ahora calculo el tiempo total en segundos sumándole o restandole la diferencia horaria entre el host y perú. En caso de que el host tenga la hora más atrasada que la de perú, se le sumará y en caso de que el host tenga la hora adelantada, se le restará
-                        if str(tiempo_diferencia).startswith("-"):
-                            #En caso de que el host tenga una hora menor...
-                            
-                            bot.send_message(message.chat.id, f"La Publicación se enviará {time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(dict_temp[message.from_user.id]))}\n\n¡El hilo de publicación ha sido activado!", reply_markup=ReplyKeyboardRemove())
-                            
-                            
-                            lote_publicaciones[publicacion].proxima_publicacion = dict_temp[message.from_user.id] + tiempo_diferencia
-                            
-                            # bot.send_message(message.chat.id, f"La Publicación se enviará {time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.gmtime((time.time() - 18000) + dict_temp[message.from_user.id]))}", reply_markup=ReplyKeyboardRemove())
-                            
-                            # dict_temp[message.from_user.id] = dict_temp[message.from_user.id] + tiempo_diferencia
-                            
-                            
-                            
-                        else:
-                            #En caso de que el host tenga una hora mayor
-                            lote_publicaciones[publicacion].proxima_publicacion = dict_temp[message.from_user.id] - tiempo_diferencia
-                                                        
-                            
-                            bot.send_message(message.chat.id, f"La Publicación se enviará {time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(dict_temp[message.from_user.id]))}\n\n¡El hilo de publicación ha sido activado!", reply_markup=ReplyKeyboardRemove())
-                            
                         
-                        
-                        #aqui guardo el tiempo exacto en el que el host enviará la publicación en su hora local
-                        
-                        # lote_publicaciones[publicacion].proxima_publicacion = time.mktime(time.localtime()) + dict_temp[message.from_user.id]
                         
                         print(time.localtime(lote_publicaciones[publicacion].proxima_publicacion))
                         
@@ -1376,11 +1354,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                         
                         if hilo_publicaciones_activo == False:
                             
-                            hilo_publicaciones_activo = True
-                            
-                            hilo_publicar=threading.Thread(name="hilo_publicar", target=usefull_functions.bucle_publicacion, args=(call.from_user.id, bot, hilo_publicaciones_activo, admin, lote_publicaciones, cursor))
-            
-                            hilo_publicar.start()
+                            bot.send_message(message.chat.id, "¡El hilo de publicaciones no está activo!\n\nActívalo para que la publicación sea hecha en el momento determinado")
                         
                         
                         
@@ -1402,7 +1376,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 
                 publicacion=re.search(r":.*", call.data).group().replace(":", "")
                     
-                msg=bot.send_message(call.from_user.id, f"Esta Publicación se envía cada {lote_publicaciones[publicacion].tiempo_publicacion // 60 // 60} hora(s), {lote_publicaciones[publicacion].tiempo_publicacion // 60 % 60} minuto(s) y {lote_publicaciones[publicacion].tiempo_publicacion % 60} segundo(s)\n\nEnvíe un nuevo intervalo de tiempo de espera entre cada publicación en MINUTOS a continuación de ESTE mensaje", reply_markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
+                msg=bot.send_message(call.from_user.id, "Esta Publicación se envía cada {} hora(s), {} minuto(s) y {} segundo(s)\n\nEnvíe un nuevo intervalo de tiempo de espera entre cada publicación en MINUTOS a continuación de ESTE mensaje".format(lote_publicaciones[publicacion].tiempo_publicacion // 60 // 60, lote_publicaciones[publicacion].tiempo_publicacion // 60 % 60, lote_publicaciones[publicacion].tiempo_publicacion % 60), reply_markup=ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
                 
                 def change_time_data(message, lote_publicaciones=lote_publicaciones):
                     

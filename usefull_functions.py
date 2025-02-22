@@ -9,37 +9,56 @@ import pymongo
 from zipfile import ZipFile as zip
 import random
 import re
+import pytz as tz
+import datetime as d
 
 
 dict_temp={}
 
 
-def calcular_diferencia_horaria(HoraHost):
-    #Esta función devuelve la hora de Perú en el momento de la hora del host
+def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
+    """
+    devolver = 'diferencia_host' > Devuelve diferencia de segundos entre el host y Perú, suma la cantidad resultante para hallar
     
+    devolver = 'hora_host' > Devuelve la hora del host establecida en HoraHost usando de punto referente la zona horaria de Perú
     
+    devolver = 'hora_peru'> Devuelve la Hora establecida en HoraHost pero en tiempo de Perú
     
-    #tiempo de diferencia entre el host - la de perú
+    devolver = 'peru' > Devuelve la hora actual de Perú
     
 
-
+    
+    """
+    
     if not isinstance(HoraHost, float):
         HoraHost = time.mktime(HoraHost)
         
     
-    tiempo_diferencia=int(time.time() - (time.mktime(time.gmtime()) - 18000))
     
     
-    #ahora calculo el tiempo total en segundos sumándole o restandole la diferencia horaria entre el host y perú. En caso de que el host tenga la hora más atrasada que la de perú, se le sumará y en caso de que el host tenga la hora adelantada, se le restará
-    if str(tiempo_diferencia).startswith("-"):
-        #En caso de que el host tenga una hora menor...
-        return HoraHost + tiempo_diferencia
+    
+    if devolver == "diferencia_host":
+        tiempo_diferencia= time.time() - tz.timezone("America/Lima").localize(d.datetime.now()).timestamp()
+        return tiempo_diferencia
+    
+    elif devolver == "hora_host":
+        tiempo_diferencia= time.time() - tz.timezone("America/Lima").localize(d.datetime.now()).timestamp()
+        return time.mktime(time.localtime(HoraHost + tiempo_diferencia))
+    
+    elif devolver == "hora_peru":
+        tiempo_diferencia= time.time() - tz.timezone("America/Lima").localize(d.datetime.now()).timestamp()
+        
+        return tz.timezone("America/Lima").localize(d.datetime.now()).timestamp() + (HoraHost - time.time())
+    
+    
+    elif devolver == "peru":
+        return tz.timezone("America/Lima").localize(d.datetime.now()).timestamp()
         
         
         
-    else:
-        #En caso de que el host tenga una hora mayor
-        return HoraHost - tiempo_diferencia
+    # else:
+    #     #En caso de que el host tenga una hora mayor
+    #     return HoraHost - tiempo_diferencia
         
         
         
@@ -926,7 +945,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
             
         dict_temp[call.from_user.id] = collection.find_one({"_id": dict_temp[call.from_user.id]})
         
-        return {"_id": dict_temp[call.from_user.id]["_id"], "fecha" : time.strftime(f"<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y", time.localtime(calcular_diferencia_horaria(dict_temp[call.from_user.id]["fecha"])))}
+        return {"_id": dict_temp[call.from_user.id]["_id"], "fecha" : time.strftime(f"<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y", time.localtime(calcular_diferencia_horaria(dict_temp[call.from_user.id]["fecha"], "hora_peru")))}
     
     
     
@@ -961,7 +980,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
                 InlineKeyboardButton("Eliminar Archivo 💥", callback_data="db_eliminar:{}".format(diccionario['_id']))
                 )
 
-            bot.send_document(call.message.chat.id, diccionario["archivo"], caption="ID de archivo: {}\n\n<u>Fecha Creación</u>:\n{}".format(diccionario['_id'], time.strftime('<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y', time.localtime(calcular_diferencia_horaria(diccionario['fecha'])))), reply_markup=markup)
+            bot.send_document(call.message.chat.id, diccionario["archivo"], caption="ID de archivo: {}\n\n<u>Fecha Creación</u>:\n{}".format(diccionario['_id'], time.strftime('<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y', time.localtime(calcular_diferencia_horaria(diccionario['fecha'], "hora_peru")))), reply_markup=markup)
             
             
         return
