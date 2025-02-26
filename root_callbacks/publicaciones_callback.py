@@ -1337,7 +1337,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                         #     return
                         
                         
-                        bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id], "hora_peru")))), reply_markup=ReplyKeyboardRemove())
+                        bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.gmtime(usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id], "hora_peru")))), reply_markup=ReplyKeyboardRemove())
                             
                             
                         lote_publicaciones[publicacion].proxima_publicacion = hora
