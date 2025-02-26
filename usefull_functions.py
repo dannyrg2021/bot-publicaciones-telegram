@@ -9,8 +9,13 @@ import pymongo
 from zipfile import ZipFile as zip
 import random
 import re
-import pytz as tz
 import datetime as d
+import requests
+import json
+
+#68TYQMUQ25P6 >
+#{'status': 'OK', 'message': '', 'countryCode': 'PE', 'countryName': 'Peru', 'regionName': '', 'cityName': '', 'zoneName': 'America/Lima', 'abbreviation': 'PET', 'gmtOffset': -18000, 'dst': '0', 'zoneStart': 765172800, 'zoneEnd': None, 'nextAbbreviation': None, 'timestamp': 1740500621, 'formatted': '2025-02-25 16:23:41'}
+
 
 
 dict_temp={}
@@ -18,13 +23,13 @@ dict_temp={}
 
 def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
     """
-    devolver = 'diferencia_host' > Devuelve diferencia de segundos entre el host y Perú, suma la cantidad resultante para hallar
+    devolver = 'diferencia_host' > Devuelve diferencia de segundos entre el host y Lima (Perú), suma la cantidad resultante para hayar
     
-    devolver = 'hora_host' > Devuelve la hora del host establecida en HoraHost usando de punto referente la zona horaria de Perú
+    devolver = 'hora_host' > Devuelve la Hora establecida en HoraHost pero en tiempo del host
     
-    devolver = 'hora_peru'> Devuelve la Hora establecida en HoraHost pero en tiempo de Perú
+    devolver = 'hora_peru'> Devuelve la Hora establecida en HoraHost pero en tiempo de Lima (Perú)
     
-    devolver = 'peru' > Devuelve la hora actual de Perú
+    devolver = 'peru' > Devuelve la hora actual de Lima (Perú)
     
 
     
@@ -32,34 +37,31 @@ def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
     
     if not isinstance(HoraHost, float):
         HoraHost = time.mktime(HoraHost)
-        
+    
+    try:
+        lima = json.loads(requests.get("http://api.timezonedb.com/v2.1/get-time-zone", params={"key": "68TYQMUQ25P6", "by": "zone", "format": "json" , "zone" : "America/Lima"}).content)["timestamp"]
+    except Exception as e:
+        return ("ERROR", e.args)
     
     
     
+    devolver = devolver.lower()
     
     if devolver == "diferencia_host":
-        tiempo_diferencia= time.time() - tz.timezone("America/Lima").localize(d.datetime.now()).timestamp()
-        return tiempo_diferencia
+        return lima - time.time()
     
     elif devolver == "hora_host":
-        tiempo_diferencia= time.time() - tz.timezone("America/Lima").localize(d.datetime.now()).timestamp()
-        return time.mktime(time.localtime(HoraHost + tiempo_diferencia))
+        return time.time() + (HoraHost - lima)
     
     elif devolver == "hora_peru":
-        tiempo_diferencia= time.time() - tz.timezone("America/Lima").localize(d.datetime.now()).timestamp()
         
-        return tz.timezone("America/Lima").localize(d.datetime.now()).timestamp() + (HoraHost - time.time())
+        return lima + (HoraHost - time.time())
     
     
     elif devolver == "peru":
-        return tz.timezone("America/Lima").localize(d.datetime.now()).timestamp()
+        return lima
         
-        
-        
-    # else:
-    #     #En caso de que el host tenga una hora mayor
-    #     return HoraHost - tiempo_diferencia
-        
+
         
         
         
@@ -945,7 +947,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
             
         dict_temp[call.from_user.id] = collection.find_one({"_id": dict_temp[call.from_user.id]})
         
-        return {"_id": dict_temp[call.from_user.id]["_id"], "fecha" : time.strftime(f"<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y", time.localtime(calcular_diferencia_horaria(dict_temp[call.from_user.id]["fecha"], "hora_peru")))}
+        return {"_id": dict_temp[call.from_user.id]["_id"], "fecha" : time.strftime(f"<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y", time.gmtime(calcular_diferencia_horaria(dict_temp[call.from_user.id]["fecha"], "hora_peru")))}
     
     
     
@@ -980,7 +982,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
                 InlineKeyboardButton("Eliminar Archivo 💥", callback_data="db_eliminar:{}".format(diccionario['_id']))
                 )
 
-            bot.send_document(call.message.chat.id, diccionario["archivo"], caption="ID de archivo: {}\n\n<u>Fecha Creación</u>:\n{}".format(diccionario['_id'], time.strftime('<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y', time.localtime(calcular_diferencia_horaria(diccionario['fecha'], "hora_peru")))), reply_markup=markup)
+            bot.send_document(call.message.chat.id, diccionario["archivo"], caption="ID de archivo: {}\n\n<u>Fecha Creación</u>:\n{}".format(diccionario['_id'], time.strftime('<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y', time.gmtime(calcular_diferencia_horaria(diccionario['fecha'], "hora_peru")))), reply_markup=markup)
             
             
         return

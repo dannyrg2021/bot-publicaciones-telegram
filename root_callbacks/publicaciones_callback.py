@@ -1279,8 +1279,6 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 
                 msg=bot.send_message(call.from_user.id, "‼Alerta‼ : Esta configuración está adecuada para la zona horaria de Lima/Perú, si tienes dudas contacta con @mistakedelalaif\n\nCon esta opción programarás la Publicación para que sea enviada en una fecha concreta\nA continuación envía la hora en el siguiente formato:\n\n <code>Hora:Minuto:Día:Mes:Año</code>\n\n\n<u>Ejemplo de uso</u>:\n<code>17:35:2:7:2030</code>\n\n(La hora debe estar representada en formato de 24 horas [00-23]el mes debe estar representado en formato númerico [1-12] y el año debe estar representado con sus 4 digitos, no con los últimos 2)\n\n\nA continuación de este mensaje, envía la programación deseada teniendo en cuenta lo explicado, si quieres cancelar pulsa en el botón 'Cancelar Operación'", reply_markup=telebot.types.ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
                 
-                print("La hora local del host es: " + str(time.localtime()))
-                print("La hora en perú es de: " + str(time.localtime(usefull_functions.calcular_diferencia_horaria(devolver="hora_peru"))))
                 
                 def time_to_post_register(message, publicacion, lote_publicaciones=lote_publicaciones, hilo_publicaciones_activo=hilo_publicaciones_activo):
 
@@ -1339,7 +1337,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                         #     return
                         
                         
-                        bot.send_message(message.chat.id, "La Publicación se enviará {}\n\n¡El hilo de publicación ha sido activado!".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id], "hora_peru")))), reply_markup=ReplyKeyboardRemove())
+                        bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id], "hora_peru")))), reply_markup=ReplyKeyboardRemove())
                             
                             
                         lote_publicaciones[publicacion].proxima_publicacion = hora

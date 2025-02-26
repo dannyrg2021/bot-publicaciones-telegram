@@ -204,8 +204,8 @@ def agregar_multimedia(publicacion, message):
 
 bot.set_my_commands([
     BotCommand("/help", "Ayuda con el bot"),
-    BotCommand("/panel", "Acceso al panel de control")
-])
+    BotCommand("/panel", "Acceso al panel de control"),
+], telebot.types.BotCommandScopeChat(os.environ["admin"]))
 
 
 # telebot.apihelper.ENABLE_MIDDLEWARE = True
@@ -257,7 +257,19 @@ def cmd_start(message):
     
 @bot.message_handler(commands=["host"])
 def cmd_host_information(message):
-    bot.send_message(message.chat.id, "La hora actual del host es: " + str(time.localtime()))
+    try:
+        res = usefull_functions.calcular_diferencia_horaria(devolver="peru")
+        if  isinstance(res, float) or  isinstance(res, int):
+        
+            bot.send_message(message.chat.id, "La hora actual del host es: " + time.strftime(r"%c" ,time.localtime()) + "\n\n" + "La hora actual de Perú es: " + time.strftime(r"%c",time.gmtime(res)))
+            
+        else:
+            
+            bot.send_message(message.chat.id, f"Ha ocurrido un error intentando solicitar la información\n\nDescripción:\n{res[1]}")
+        
+    except Exception as e:
+        bot.send_message(message.chat.id, f"Ha ocurrido una excepcion\n\nDescripción de la excepción:\n{e}")
+    return
     
 
 
