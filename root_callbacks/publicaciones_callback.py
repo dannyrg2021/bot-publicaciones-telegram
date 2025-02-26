@@ -1328,16 +1328,14 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
 
                         
                         
-                        if str(hora).startswith("-"):
+                        if hora <= time.time():
                             bot.send_message(message.chat.id, "¡Has establecido una programación futura menor al horario actual en Perú!\n\nOperación cancelada", reply_markup=ReplyKeyboardRemove())
                             return
                         
-                        # elif dict_temp[message.from_user.id] <= time.mktime(time.gmtime(time.time() - 18000)) + 60:
-                        #     bot.send_message(message.chat.id, "¡Has establecido una programación futura muy cercana al horario actual en Perú!\n\nOperación cancelada", reply_markup=ReplyKeyboardRemove())
-                        #     return
+
                         
                         
-                        bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.gmtime(usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id], "hora_peru")))), reply_markup=ReplyKeyboardRemove())
+                        bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.gmtime(usefull_functions.calcular_diferencia_horaria(hora, "hora_peru")))), reply_markup=ReplyKeyboardRemove())
                             
                             
                         lote_publicaciones[publicacion].proxima_publicacion = hora
