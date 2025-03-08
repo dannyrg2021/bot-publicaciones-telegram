@@ -14,57 +14,6 @@ import pymongo
 dic_temp = {}
 
 
-def cargar_variables():
-
-    
-    
-    with open("publicaciones.dill", "rb") as archivo:
-        lote_publicaciones=dill.load(archivo)
-        globals()["lote_publicaciones"] = lote_publicaciones
-        
-
-    return lote_publicaciones
-        
-    # if cargar=="variables" or cargar=="all":
-    #     with open("variables.dill", "rb") as archivo:
-    #         lote_variables=dill.load(archivo)
-    #         for key, item in lote_variables.items():
-    #             globals()[str(key)] = item
-
-    #     if cargar == "variables":
-    #         return lote_variables
-    
-    # return lote_publicaciones, lote_variables
-    
-
-def guardar_variables(lote_publicaciones):
-    
-
-    
-
-    with open("publicaciones.dill", "wb") as archivo:
-        dill.dump(lote_publicaciones, archivo)
-    
-    # if guardar=="variables" or guardar=="all":
-    #     dict_variables=dict(
-    #         hilo_publicar = hilo_publicar,
-    #         hilo_publicaciones_activo = hilo_publicaciones_activo,
-    #         lote_publicaciones = lote_publicaciones,
-    #         lista_canales = lista_canales,
-    #         admin = admin,
-    #         lista_seleccionada = lista_seleccionada,
-    #         dic_temp = dic_temp,
-    #         operacion = operacion
-    
-    #     )
-        
-        
-        
-    #     with open("variables.dill", "wb") as archivo:
-    #         dill.dump(dict_variables, archivo)
-        
-    return
-
 
 
 def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_canales, lista_seleccionada, hilo_publicaciones_activo, dic_temp, operacion):
@@ -111,7 +60,8 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
         markup.add(
                     InlineKeyboardButton("👁 Mis Canales", callback_data="ver_canal_search:0"),
                     InlineKeyboardButton("➕Añadir Canal", callback_data="anadir_canal"),
-                    InlineKeyboardButton("❌Eliminar Canal", callback_data="eliminar_canal")
+                    InlineKeyboardButton("❌Eliminar Canal", callback_data="eliminar_canal"),
+                    InlineKeyboardButton("Volver | Menú ♻", callback_data="volver_menu")
                 )
         
         usefull_functions.enviar_mensajes(bot, call, "👇 Elija una de las opciones disponibles 👇\n\n\n<b>Mis Canales</b> - Ver los canales disponibles\n\n<b>Añadir Canal</b> - Añadir canales por ID o @username\n\n<b>Eliminar Canal</b> - Elimina un canal de los disponibles", markup)
@@ -130,13 +80,13 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
         
 
         
-        dic_temp[call.from_user.id]=[i[0] for i in cursor.fetchall()]
         
         # if len(dic_temp[call.from_user.id]) == 0:
         #     bot.send_message(call.from_user.id, "No hay ningún canal en la Base de Datos, por favor, agregue alguno", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Agregar Canal Aquí 🎆", callback_data="anadir_canal")]]))
         #     return
             
         if "ver_canal_search" in call.data:
+            
 
             if int(re.search(r":.*", call.data).group().replace(":", ""))<0:
                 bot.answer_callback_query(call.id, "¡Ya estás en la primera parte de la lista!", True)
@@ -150,8 +100,13 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             
             else:
                 #esta funcion retorna el índice de la próxima publicación
-                usefull_functions.ver_canal(call ,bot, call.from_user.id, int(re.search(r":.*", call.data).group().replace(":", "")), cursor)
-                
+                try:
+                    usefull_functions.ver_canal(call ,bot, call.from_user.id, int(re.search(r":.*", call.data).group().replace(":", "")), cursor)
+                except Exception as e:
+                    bot.send_message(call.message.chat.id, f"Se ha producido un error intentando mostrar los canales disponibles :(\n\nDescripción:\n{e.args}")
+                     
+                return
+                    
         else:
             bot.answer_callback_query(call.id, "Nombre del canal: {}\nTipo de Chat: {}\nSub Totales: {}\nAdministradores en el chat: {}".format(bot.get_chat(int(re.search(r":.*", call.data).group().replace(":", ""))).title, bot.get_chat(int(re.search(r":.*", call.data).group().replace(":", ""))).type, bot.get_chat_member_count(int(re.search(r":.*", call.data).group().replace(":", ""))), len(bot.get_chat_administrators(int(re.search(r":.*", call.data).group().replace(":", ""))))), True)
             
@@ -178,11 +133,14 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
     
     elif "eliminar_canal" in call.data:
 
-
+        
         try:
             
-        
+            
             if "eliminar_canal_search" in call.data:
+                cursor.execute("SELECT ID FROM CANALES")
+                lista_fetch=cursor.fetchall()
+                
                 if int(re.search(r":.*", call.data).group().replace(":", ""))<0:
                     bot.answer_callback_query(call.id, "¡Ya estás en la primera lista!", True)
                     return
@@ -225,7 +183,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             
                     
             elif "eliminar_canal_select" in call.data:
-            #"eliminar_canal_select" para cuando un canal es seleccionado
+            # callback_data=f"eliminar_canal_select'{indice_inicial}:{indice}"
                 cursor.execute("SELECT ID FROM CANALES")
                 dic_temp[call.from_user.id]=cursor.fetchall()
                 
@@ -238,15 +196,15 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                     lista_seleccionada.append(dic_temp[call.from_user.id][int(re.search(r":.*", call.data).group().replace(":", ""))][0])
                     
                     #llamo a la funcion para volver a mostrar los mismos canales, pero esta vez, actualizados
-                    if not int(re.search(r":.*", call.data).group().replace(":", ""))%10 == 0:
-                        usefull_functions.eliminar_canal(call, call.from_user.id, bot , cursor , int(re.search(r":.*", call.data).group().replace(":", "")) - (int(re.search(r":.*", call.data).group().replace(":", "")) %10 ), lista_seleccionada)
+
+                    usefull_functions.eliminar_canal(call, call.from_user.id, bot , cursor , int(re.search(r"'.*:", call.data).group().replace(":", "").replace("'", "")), lista_seleccionada)
                     
-                    else:
-                        usefull_functions.eliminar_canal(call, call.from_user.id, bot , cursor , int(re.search(r":.*", call.data).group().replace(":", "")), lista_seleccionada)
+
                     
                     return
                 
             elif "eliminar_canal_deselect" in call.data:
+                # callback_data=f"eliminar_canal_deselect'{indice_inicial}:{indice}"
                 cursor.execute("SELECT ID FROM CANALES")
                 dic_temp[call.from_user.id]=cursor.fetchall()
                 
@@ -257,23 +215,27 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 else:
                     lista_seleccionada.remove(dic_temp[call.from_user.id][int(re.search(r":.*", call.data).group().replace(":", ""))][0])
                     
-                    if not int(re.search(r":.*", call.data).group().replace(":", "")) %10 == 0:
-                        usefull_functions.eliminar_canal(call, call.from_user.id, bot , cursor , int(re.search(r":.*", call.data).group().replace(":", "")) - (int(re.search(r":.*", call.data).group().replace(":", "")) %10) , lista_seleccionada)
+
+                    usefull_functions.eliminar_canal(call, call.from_user.id, bot , cursor , int(re.search(r"'.*:", call.data).group().replace(":", "").replace("'", "")) , lista_seleccionada)
                         
-                    else:
-                        usefull_functions.eliminar_canal(call, call.from_user.id, bot , cursor , int(re.search(r":.*", call.data).group().replace(":", "")) , lista_seleccionada)
+
                     
                     return
                 
                 
             elif "eliminar_canal_confirm" in call.data:
+                
+                if not lista_seleccionada:
+                    usefull_functions.enviar_mensajes(bot, call, "¡No hay ningún canal seleccionado!\n\nOperación Cancelada :(\n\nPresiona /panel para regresar")
+                    return
 
                 for canal in lista_seleccionada:
                     cursor.execute(f"DELETE FROM CANALES WHERE ID={canal}")
                     for publicacion in lote_publicaciones:
                         if canal in lote_publicaciones[publicacion].canales:
+                            
                             lote_publicaciones[publicacion].canales.remove(canal)
-                    
+                
                 conexion.commit()
                 
                 
@@ -287,14 +249,14 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                         
                 
                 try:
-                    usefull_functions.enviar_mensajes(bot, call, dic_temp[call.from_user.id])
+                    usefull_functions.enviar_mensajes(bot, call, dic_temp[call.from_user.id], InlineKeyboardMarkup([[InlineKeyboardButton("Menú | Volver ♻", callback_data="lista_canales_elegir")]]))
                 
                 except Exception as e:
                     bot.send_message(call.from_user.id, "Ha ocurrido un error intentando enviar el mensaje de los canales eliminados")
                     
-                lista_seleccionada=[]
+                lista_seleccionada.clear()
                 
-                guardar_variables(lote_publicaciones)
+                usefull_functions.guardar_variables(lote_publicaciones)
                     
                 return
                 

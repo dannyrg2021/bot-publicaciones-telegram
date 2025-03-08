@@ -136,7 +136,11 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
             
             lote_publicaciones = usefull_functions.cargar_variables()
             
-            bot.send_message(call.message.chat.id, "Copia cargada exitosamente :D\n\n/panel para regresar")
+            try:
+                usefull_functions.enviar_mensajes(bot, call, "Copia cargada exitosamente :D\n\n/panel para regresar")
+                
+            except:
+                bot.send_message(call.message.chat.id, "Copia cargada exitosamente :D\n\n/panel para regresar")
             
             os.remove("Copia_Seguridad.zip")
             
@@ -153,12 +157,12 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
         usefull_functions.operaciones_DB(call, bot, host_url, "eliminar", id=int(re.search(r":.*", call.data).group().replace(":", "")))
         
         try:
-            bot.delete_message(call.message.chat.id, call.message.message_id)
+            usefull_functions.enviar_mensajes(bot, call, "Copia Eliminada Satisfactoriamente :D\n\nPresiona /panel para volver")
             
         except:
-            pass
+            bot.send_message(call.message.chat.id, "Copia Eliminada Satisfactoriamente :D\n\nPresiona /panel para volver")
         
-        bot.send_message(call.message.chat.id, "Copia Eliminada Satisfactoriamente :D\n\nPresiona /panel para volver")
+        
         return
         
         

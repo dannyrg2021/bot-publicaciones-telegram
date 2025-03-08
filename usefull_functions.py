@@ -3,6 +3,7 @@ import dill
 import traceback
 import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telebot.util import quick_markup
 import os
 import sqlite3
 import pymongo
@@ -12,6 +13,7 @@ import re
 import datetime as d
 import requests
 import json
+import sys
 
 #68TYQMUQ25P6 >
 #{'status': 'OK', 'message': '', 'countryCode': 'PE', 'countryName': 'Peru', 'regionName': '', 'cityName': '', 'zoneName': 'America/Lima', 'abbreviation': 'PET', 'gmtOffset': -18000, 'dst': '0', 'zoneStart': 765172800, 'zoneEnd': None, 'nextAbbreviation': None, 'timestamp': 1740500621, 'formatted': '2025-02-25 16:23:41'}
@@ -19,6 +21,14 @@ import json
 
 
 dict_temp={}
+
+
+def ruta_root():
+    if not os.path.basename(sys.argv[0]) == "main.py":
+        return os.path.abspath(".")
+    
+    else:
+        return os.path.dirname(os.path.abspath(sys.argv[0]))
 
 
 def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
@@ -35,11 +45,14 @@ def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
     
     """
     
+    
+    tiempo_diferencia = time.mktime(time.gmtime()) - time.time() + 10
+    
     if not isinstance(HoraHost, float):
         HoraHost = time.mktime(HoraHost)
     
     try:
-        lima = json.loads(requests.get("http://api.timezonedb.com/v2.1/get-time-zone", params={"key": "68TYQMUQ25P6", "by": "zone", "format": "json" , "zone" : "America/Lima"}).content)["timestamp"]
+        lima = json.loads(requests.get("http://api.timezonedb.com/v2.1/get-time-zone", params={"key": "68TYQMUQ25P6", "by": "zone", "format": "json" , "zone" : "America/Lima"}).content)["timestamp"] + tiempo_diferencia
     except Exception as e:
         return ("ERROR", e.args)
     
@@ -47,19 +60,22 @@ def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
     
     devolver = devolver.lower()
     
+    
+
+    
     if devolver == "diferencia_host":
-        return lima - time.time()
+        return time.mktime(time.localtime(lima - time.time()))
     
     elif devolver == "hora_host":
-        return time.time() + (HoraHost - lima)
+        return time.mktime(time.localtime(time.time() + (HoraHost - lima)))
     
     elif devolver == "hora_peru":
         
-        return lima + (HoraHost - time.time())
+        return time.mktime(time.localtime(lima + (HoraHost - time.time()))) 
     
     
     elif devolver == "peru":
-        return lima
+        return time.mktime(time.localtime(lima)) 
         
 
         
@@ -245,7 +261,8 @@ def cargar_conexion():
 
 def cargar_variables():
     
-    with open("publicaciones.dill", "rb") as archivo:
+    carpeta_root = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(carpeta_root , "publicaciones.dill"), "rb") as archivo:
         lote_publicaciones=dill.load(archivo)
         globals()["lote_publicaciones"] = lote_publicaciones
 
@@ -255,11 +272,12 @@ def cargar_variables():
     
     
 
-def guardar_variables(lote_publicaciones , guardar="all"):
+def guardar_variables(lote_publicaciones):
     
-    if guardar=="publicaciones" or guardar=="all":
-        with open("publicaciones.dill", "wb") as archivo:
-            dill.dump(lote_publicaciones, archivo)
+    
+    carpeta_root = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(carpeta_root, "publicaciones.dill"), "wb") as archivo:
+        dill.dump(lote_publicaciones, archivo)
     
     
     
@@ -314,7 +332,7 @@ def enviar_publicacion(publicacion, user, bot, cursor, admin, lote_publicaciones
                     pass
                 
                 else:
-                    bot.send_message(user, f"No se pudo eliminar el mensaje al canal: <a href='{bot.get_chat(publicacion.canales[i]).invite_link}'>{bot.get_chat(publicacion.canales[i]).title}</a>, el ID de la publicación es: {publicacion.ID}\n\nRevisa que yo posea los permisos administrativos y de ELIMINAR, o que el canal/grupo siquiera siga existiendo\n\nDescripción del error:\n{e.args[0]}")
+                    bot.send_message(user, f"No se pudo eliminar el mensaje al canal: <a href='{bot.get_chat(publicacion.canales[i]).invite_link}'>{bot.get_chat(publicacion.canales[i]).title}</a>, el ID de la publicación es: <code>{publicacion.ID}</code>\n\nRevisa que yo posea los permisos administrativos y de ELIMINAR, o que el canal/grupo siquiera siga existiendo\n\nDescripción del error:\n{e.args[0]}")
                 
                 # for canal_error in cursor.fetchall():
                 #     if canal_error[0]==canal:
@@ -340,8 +358,8 @@ def enviar_publicacion(publicacion, user, bot, cursor, admin, lote_publicaciones
         
    
     for canal in publicacion.canales:
+        diccionario_publicacion, lista_opcional=publicacion.mostrar_publicacion()
         try:
-            diccionario_publicacion, lista_opcional=publicacion.mostrar_publicacion()
             for lista in diccionario_publicacion:
                 
                 
@@ -474,6 +492,7 @@ def bucle_publicacion(user, bot, hilo_publicaciones_activo, admin, lote_publicac
             
             if time.time()>=lote_publicaciones[publicacion].proxima_eliminacion and not lote_publicaciones[publicacion].proxima_eliminacion==False: 
                 
+
                 eliminar_publicacion(lote_publicaciones[publicacion], bot, cursor, admin, lote_publicaciones)
                 
                 guardar_variables(lote_publicaciones)
@@ -504,26 +523,23 @@ def bucle_publicacion(user, bot, hilo_publicaciones_activo, admin, lote_publicac
 
 def ver_canal(call, bot, user, indice, cursor):
     lista_id=["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟"]
-    dict_temp[user]={1: [] , 2: [] }
+    dict_temp[user]={}
     cursor.execute("SELECT ID FROM CANALES")
     lista_fetch=cursor.fetchall()
-
-    
+    maximo = 10
     indice_inicial=indice
     texto=""
     texto="A continuación la lista de canales disponibles, fíjate en el ID del canal y presiona el botón inferior correspondiente a dicho canal\n\n"
     try:
 
-        for i in range(10):
+        for i in range(maximo):
             
             texto+=str(lista_id[i]) + " =>  " + f"<a href='{bot.get_chat(lista_fetch[indice][0]).invite_link}'>{bot.get_chat(lista_fetch[indice][0]).title}</a>\n\n"
             
+            dict_temp[user][lista_id[i]] = {"callback_data" : "ver_canal:" + str(lista_fetch[i][0])}
             
-            if i<4:
-                dict_temp[user][1].append(InlineKeyboardButton(lista_id[i], callback_data="ver_canal:"+ str(lista_fetch[i][0])))
             
-            else:
-                dict_temp[user][2].append(InlineKeyboardButton(lista_id[i], callback_data="ver_canal:"+ str(lista_fetch[i][0])))
+            
             
             indice+=1
             
@@ -537,17 +553,17 @@ def ver_canal(call, bot, user, indice, cursor):
             bot.send_message(user, f"Ha ocurrido un error al intentar mostrar la lista de canales en el archivo usefull_functions.ver_canal()\n\nDescripción:\n{e}")
     
     
-    if dict_temp[user][2]:
-        markup_canales=InlineKeyboardMarkup([[i for i in dict_temp[user][1]],[i for i in dict_temp[user][2]]])
-        
-    else:
-        markup_canales=InlineKeyboardMarkup([[i for i in dict_temp[user][1]]])
+    markup_canales=quick_markup(dict_temp[user], 5)
         
         
     
-    texto+=f"\n\n\nMostrados {indice} canales/grupos de {len(lista_fetch)}"
-    markup_canales.row(InlineKeyboardButton("⬅️", callback_data=f"ver_canal_search:{indice_inicial-10}"), InlineKeyboardButton("➡️", callback_data=f"ver_canal_search:{indice}"))
-    markup_canales.row(InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu"))
+    texto+=f"\n\nMostrados {indice} canales/grupos de {len(lista_fetch)}"
+    
+    
+    if len(lista_fetch) > maximo:
+        markup_canales.row(InlineKeyboardButton("⬅️", callback_data=f"ver_canal_search:{indice_inicial-10}"), InlineKeyboardButton("➡️", callback_data=f"ver_canal_search:{indice}"))
+        
+    markup_canales.row(InlineKeyboardButton("Menú | Volver ♻", callback_data="lista_canales_elegir"))
     
     try:
         enviar_mensajes(bot, call, texto, markup_canales)
@@ -566,17 +582,18 @@ def eliminar_canal(call, user , bot, cursor, indice, lista_seleccionada: list = 
     markup_canales=InlineKeyboardMarkup(row_width=1)
     lista_fetch=cursor.fetchall()
     indice_inicial=indice
+    maximo = 8
     
     
     try:
 
-        for i in range(10):
+        for i in range(maximo):
 
                     
             if lista_seleccionada and lista_fetch[indice][0] in lista_seleccionada:
-                markup_canales.add(InlineKeyboardButton(f"✅ {bot.get_chat(lista_fetch[indice][0]).title}", callback_data=f"eliminar_canal_deselect:{indice}"))
+                markup_canales.add(InlineKeyboardButton(f"✅ {bot.get_chat(lista_fetch[indice][0]).title}", callback_data=f"eliminar_canal_deselect'{indice_inicial}:{indice}"))
             else:   
-                markup_canales.add(InlineKeyboardButton(bot.get_chat(lista_fetch[indice][0]).title, callback_data=f"eliminar_canal_select:{indice}"))
+                markup_canales.add(InlineKeyboardButton(bot.get_chat(lista_fetch[indice][0]).title, callback_data=f"eliminar_canal_select'{indice_inicial}:{indice}"))
             
             indice+=1
             
@@ -587,9 +604,18 @@ def eliminar_canal(call, user , bot, cursor, indice, lista_seleccionada: list = 
         else:
             bot.send_message(user, f"Ha ocurrido un error al intentar mostrar la lista de canales en el archivo usefull_functions.eliminar_canal()\n\nDescripción:\n{e}")
     
-    markup_canales.row(
-        InlineKeyboardButton("⬅️", callback_data=f"eliminar_canal_search:{indice_inicial-10}"),
-        InlineKeyboardButton("➡️", callback_data=f"eliminar_canal_search:{indice}"))
+    
+    if len(lista_fetch) > maximo:
+        if indice_inicial % maximo != 0:
+            markup_canales.row(
+                InlineKeyboardButton("⬅️", callback_data=f"eliminar_canal_search:{indice_inicial - (indice_inicial % maximo)}"),
+                InlineKeyboardButton("➡️", callback_data=f"eliminar_canal_search:{indice}"))
+
+            
+        else:
+            markup_canales.row(
+                InlineKeyboardButton("⬅️", callback_data=f"eliminar_canal_search:{indice_inicial - maximo}"),
+                InlineKeyboardButton("➡️", callback_data=f"eliminar_canal_search:{indice}"))
     
     markup_canales.row(
         InlineKeyboardButton("🧨Seleccionar Todos (de esta lista)🧨", callback_data=f"eliminar_canal_select_bethween:{indice_inicial}-{indice-1}"))
@@ -597,10 +623,10 @@ def eliminar_canal(call, user , bot, cursor, indice, lista_seleccionada: list = 
         InlineKeyboardButton("🎃Deseleccionar Todos🎃", callback_data=f"eliminar_canal_deselect_all:{indice_inicial}"))
     
     markup_canales.row(InlineKeyboardButton("✅ Listo (Eliminar)", callback_data="eliminar_canal_confirm"))
-    markup_canales.row(InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu"))
+    markup_canales.row(InlineKeyboardButton("Menú | Volver ♻", callback_data="lista_canales_elegir"))
 
     try:
-        enviar_mensajes(bot, call, "Selecciona el/los canal(es) a ELIMINAR", markup_canales)
+        enviar_mensajes(bot, call, "Selecciona el/los canal(es) a <b>ELIMINAR</b>", markup_canales)
     
     except:
         bot.send_message(user, f"Ha ocurrido el siguiente error en userfull_functions.eliminar_canal: \n\n{e}")
@@ -613,9 +639,11 @@ def eliminar_canal(call, user , bot, cursor, indice, lista_seleccionada: list = 
     
 def ver_publicaciones(call, bot, user, cursor, indice, lote_publicaciones, operacion="ver_publicaciones"):
 
-    lista_inline=[]
+    dic_inline={}
     indice_inicial=indice
     
+    lote_publicaciones = cargar_variables()
+    maximo = 10
     
     # operacion = "del_publicaciones" para borrar
     # operacion = "ver_publicaciones" para ver
@@ -626,11 +654,13 @@ def ver_publicaciones(call, bot, user, cursor, indice, lote_publicaciones, opera
         
         try:
             #al mandar el callback_data se enviará el nombre del elemento en el diccionario (lote_publicaciones), para obtenerlo es preciso usar re para buscar el nombre en el propio callback (ej: callback_data = "ver_publicaciones_index:objeto_1_markup"), extraer el nombre del elemento (va seguido de ":") y usar el metodo .get() de los diccionarios 
-            lista_inline.append(InlineKeyboardButton(f"{lote_publicaciones[publicacion].ID}", callback_data=f"{operacion}_index:{publicacion}")) 
+            nombre = list(lote_publicaciones)[indice]
+            
+            dic_inline[f"{lote_publicaciones[nombre].ID}"] = {"callback_data" : f"{operacion}_index:{nombre}"} 
                 
             indice+=1
             
-            if indicef==29:
+            if indicef==maximo - 1:
                 break
             
         except Exception as e:
@@ -641,24 +671,29 @@ def ver_publicaciones(call, bot, user, cursor, indice, lote_publicaciones, opera
             else:
                 bot.send_message(user, f"Ha ocurrido un error intentando recopilar información para mostrar las publicaciones\n\n{e}")
                 return
-    
-    if len(lista_inline) <=10:
-        dict_temp[user]=1
+
         
-    elif len(lista_inline) > 10 and len(lista_inline) <= 20:
-        dict_temp[user]=2
-        
-    elif len(lista_inline) > 20 and len(lista_inline) <=30:
-        dict_temp[user]=3
         
     
     
-    markup_publicacion=InlineKeyboardMarkup([[i for i in lista_inline]], row_width=dict_temp[user]) 
+    markup_publicacion=quick_markup(dic_inline, row_width=5)
+    
+    
     
 
-    markup_publicacion.row(
-        InlineKeyboardButton("⬅️", callback_data=f"{operacion}_search:{indice_inicial-10}"),
-        InlineKeyboardButton("➡️", callback_data=f"{operacion}_search:{indice}"))
+        
+    
+    if len(lote_publicaciones) > maximo:
+        if indice_inicial % maximo != 0:
+            markup_publicacion.row(
+                InlineKeyboardButton("⬅️", callback_data=f"{operacion}_search:{indice_inicial - (indice_inicial % maximo)}"),
+                InlineKeyboardButton("➡️", callback_data=f"{operacion}_search:{indice}"))
+            
+        else:
+            markup_publicacion.row(
+                InlineKeyboardButton("⬅️", callback_data=f"{operacion}_search:{indice_inicial-maximo}"),
+                InlineKeyboardButton("➡️", callback_data=f"{operacion}_search:{indice}"))
+            
         
     # elif tipo=="change":
     #     markup_publicacion.row(
@@ -692,43 +727,53 @@ def change_channels(call, user , bot, indice, publicacion, tipo, operacion , lis
     global dict_temp
     indice_inicial=indice
     markup_canales=InlineKeyboardMarkup(row_width=1)
+    maximo = 4
     
-    
+
     
     # lista_seleccionada = ID de los canales seleccionados para eliminar
     
-    
+
     
     if tipo == "eliminar":
         
-        operacion = "ver_publicaciones_config/change_channels_eliminar_"
+        operacion = "ver_publicaciones/cc/eliminar"
+        
+
         
         try:
             
             
-            for i in range(10):
+            for i in range(maximo):
                 
                 if lista_seleccionada and publicacion.canales[indice] in lista_seleccionada:
-                    markup_canales.add(InlineKeyboardButton(f"✅ {bot.get_chat(publicacion.canales[indice]).title}", callback_data=f"operacion_eliminar/deselect:{indice}&{publicacion.ID}"))
+                    markup_canales.add(InlineKeyboardButton(f"✅ {bot.get_chat(publicacion.canales[indice]).title}", callback_data=f"operacion_eliminar/deselect'{indice_inicial}:{indice}&{publicacion.ID}"))
                 else:   
-                    markup_canales.add(InlineKeyboardButton(bot.get_chat(publicacion.canales[indice]).title, callback_data=f"operacion_eliminar/select:{indice}&{publicacion.ID}"))
+                    markup_canales.add(InlineKeyboardButton(bot.get_chat(publicacion.canales[indice]).title, callback_data=f"operacion_eliminar/select'{indice_inicial}:{indice}&{publicacion.ID}"))
                 
                 indice+=1
                 
         except Exception as e:
-            if indice > len(publicacion.canales)-1:
+            if "list index out of range" in str(e.args):
                 pass
             
             else:
                 bot.send_message(user, f"Ha ocurrido un error al intentar mostrar la lista de canales en el archivo usefull_functions.change_channels('eliminar')\n\nDescripción:\n{e}")
         
-        if len(publicacion.canales) > 10:
-            markup_canales.row(
-                InlineKeyboardButton("⬅️", callback_data=f"operacion_eliminar/search:{indice_inicial-10}"),
-                InlineKeyboardButton("➡️", callback_data=f"operacion_eliminar/search:{indice}"))
+        
+        if len(publicacion.canales) > maximo:
+            if indice_inicial % maximo != 0:
+                markup_canales.row(
+                    InlineKeyboardButton("⬅️", callback_data=f"operacion_eliminar/search:{indice_inicial - (indice_inicial % maximo)}&{publicacion.ID}"),
+                    InlineKeyboardButton("➡️", callback_data=f"operacion_eliminar/search:{indice}&{publicacion.ID}"))
+                
+            else:
+                markup_canales.row(
+                    InlineKeyboardButton("⬅️", callback_data=f"operacion_eliminar/search:{indice_inicial-maximo}&{publicacion.ID}"),
+                    InlineKeyboardButton("➡️", callback_data=f"operacion_eliminar/search:{indice}&{publicacion.ID}"))
         
         markup_canales.row(
-            InlineKeyboardButton("🧨Seleccionar Todos (de esta lista)🧨", callback_data=f"operacion_eliminar/select_bethween:{indice_inicial}-{indice-1}&{publicacion.ID}"))
+            InlineKeyboardButton("💠Seleccionar Todos (de esta lista)💠", callback_data=f"operacion_eliminar/select_bethween:{indice_inicial}-{indice-1}&{publicacion.ID}"))
         markup_canales.row( 
             InlineKeyboardButton("🎃Deseleccionar Todos🎃", callback_data=f"operacion_eliminar/deselect_all:{indice_inicial}&{publicacion.ID}"))
         
@@ -737,58 +782,68 @@ def change_channels(call, user , bot, indice, publicacion, tipo, operacion , lis
         
         
 
-        call.data = "Selecciona el/los canal(es) a eliminar de la Publicación\n\nPara deseleccionar presiona en el canal que seleccionaste marcado con ✅"
+        call.data = "Selecciona el/los canal(es) a <b>ELIMINAR</b> de la Publicación\n\nPara deseleccionar presiona en el canal que seleccionaste marcado con ✅"
 
     
     elif tipo == "anadir" :
         
         
-        operacion = "ver_publicaciones_config/change_channels_anadir_"
-        
+        operacion = "ver_publicaciones/cc/anadir"
+    
         cursor.execute("SELECT ID FROM CANALES")
         dict_temp[user] = cursor.fetchall()
         
         
-        try:
-            for i in range(10):
-                
-                if not dict_temp[user][indice] in lista_seleccionada:
-                    markup_canales.add(InlineKeyboardButton(bot.get_chat(dict_temp[user][indice]).tittle, callback_data=f"operacion_anadir/select:{indice}&{publicacion.ID}"))
+        
+        for i in range(maximo):
+            try:
+            # if dict_temp[user][indice][0] in publicacion.canales:
+            #     continue
+            
+                if not dict_temp[user][indice][0] in lista_seleccionada:
+                    markup_canales.add(InlineKeyboardButton(bot.get_chat(dict_temp[user][indice]).title, callback_data=f"operacion_anadir/select'{indice_inicial}:{indice}&{publicacion.ID}"))
                     
                 else:
-                    markup_canales.add(InlineKeyboardButton("✅ "+ bot.get_chat(dict_temp[user][indice]).tittle, callback_data=f"operacion_anadir/deselect:{indice}&{publicacion.ID}"))
+                    markup_canales.add(InlineKeyboardButton("✅ "+ bot.get_chat(dict_temp[user][indice]).title, callback_data=f"operacion_anadir/deselect'{indice_inicial}:{indice}&{publicacion.ID}"))
                     
                 indice +=1
                 
+            except Exception as e:
+                if "list index out of range" in str(e.args):
+                    break
                 
-        except Exception as e:
-            if indice > len(publicacion.canales)-1:
-                pass
-            
+                else:
+                    bot.send_message(user, f"Ha ocurrido un error al intentar mostrar la lista de canales en el archivo usefull_functions.change_channels('eliminar')\n\nDescripción:\n{e}")
+                
+        
+        if len(dict_temp[user]) > maximo:
+            if indice_inicial % maximo != 0:
+                markup_canales.row(
+                    InlineKeyboardButton("⬅️", callback_data=f"operacion_anadir/search:{indice_inicial-(indice_inicial % maximo)}&{publicacion.ID}"),
+                    InlineKeyboardButton("➡️", callback_data=f"operacion_anadir/search:{indice}&{publicacion.ID}"))
+                
             else:
-                bot.send_message(user, f"Ha ocurrido un error al intentar mostrar la lista de canales en el archivo usefull_functions.change_channels('eliminar')\n\nDescripción:\n{e}")
+                markup_canales.row(
+                    InlineKeyboardButton("⬅️", callback_data=f"operacion_anadir/search:{indice_inicial-maximo}&{publicacion.ID}"),
+                    InlineKeyboardButton("➡️", callback_data=f"operacion_anadir/search:{indice}&{publicacion.ID}"))
                 
         
-        if len(publicacion.canales) > 10:
-            markup_canales.row(
-                InlineKeyboardButton("⬅️", callback_data=f"operacion_anadir/search:{indice_inicial-10}&{publicacion.ID}"),
-                InlineKeyboardButton("➡️", callback_data=f"operacion_anadir/search:{indice}&{publicacion.ID}"))
-        
-        markup_canales.row(InlineKeyboardButton("🧨Seleccionar Todos (de esta lista)🧨", callback_data=f"operacion_anadir/select_bethween:{indice_inicial}-{indice-1}&{publicacion.ID}"))
+        markup_canales.row(InlineKeyboardButton("💠Seleccionar Todos (de esta lista)💠", callback_data=f"operacion_anadir/select_bethween:{indice_inicial}-{indice-1}&{publicacion.ID}"))
         
         markup_canales.row(InlineKeyboardButton("🎃Deseleccionar Todos🎃", callback_data=f"operacion_anadir/deselect_all:{indice_inicial}&{publicacion.ID}"))
         
         markup_canales.row(InlineKeyboardButton("✅ Listo (Añadir)", callback_data=f"operacion_anadir/confirm:{publicacion.ID}"))
         markup_canales.row(InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu"))
         
-        call.data = "Selecciona el/los canal(es) para añadir a la Publicación\n\nPara deseleccionar presiona en el canal que seleccionaste, marcado con ✅"
+        call.data = "Selecciona el/los canal(es) para <b>AÑADIR</b> a la Publicación\n\nPara deseleccionar presiona en el canal que seleccionaste, marcado con ✅"
         
         
     try:
-        bot.edit_message_text(call.data, chat_id=user , message_id=call.message.message_id, reply_markup=markup_canales)
+        enviar_mensajes(bot, call, call.data, markup_canales)
+        # bot.edit_message_text(call.data, chat_id=user , message_id=call.message.message_id, reply_markup=markup_canales)
         
     except Exception as e:
-        
+
         try:
             bot.send_message(user, call.data , reply_markup=markup_canales)
         except:
@@ -806,35 +861,42 @@ def agregar_canal_publicacion(bot, call, indice, lista_seleccionada, cursor):
         
         indice_inicial=indice
         dict_temp[call.from_user.id] = cursor.fetchall()
+        maximo=4
         
         try:
             
-            
-            for i in range(10):
+            for i in range(maximo):
                 
                 
                 if lista_seleccionada and dict_temp[call.from_user.id][indice][0] in lista_seleccionada:
                     #deselect
-                    markup_canales.add(InlineKeyboardButton(f"✅ {bot.get_chat(dict_temp[call.from_user.id][indice][0]).title}", callback_data=f"publicacion/c/deselect:{indice}"))
+                    markup_canales.add(InlineKeyboardButton(f"✅ {bot.get_chat(dict_temp[call.from_user.id][indice][0]).title}", callback_data=f"publicacion/c/deselect'{indice_inicial}:{indice}"))
                 else:   
                     #select
-                    markup_canales.add(InlineKeyboardButton(bot.get_chat(dict_temp[call.from_user.id][indice][0]).title, callback_data=f"publicacion/c/select:{indice}"))
+                    markup_canales.add(InlineKeyboardButton(bot.get_chat(dict_temp[call.from_user.id][indice][0]).title, callback_data=f"publicacion/c/select'{indice_inicial}:{indice}"))
                 
                 indice+=1
                 
         except Exception as e:
-            if indice > len(dict_temp[call.from_user.id])-1:
+            if "list index out of range" in str(e.args):
                 pass
             
             else:
                 bot.send_message(call.message.chat.id, f"Ha ocurrido un error al intentar mostrar la lista de canales en el archivo usefull_functions.change_channels('agregar_publicacion')\n\nDescripción:\n{e}")
-                
         
-        if len(dict_temp[call.from_user.id]) > 10:
-            markup_canales.row(
-                #search
-                InlineKeyboardButton("⬅️", callback_data=f"publicacion/c/s:{indice_inicial-10}"),
-                InlineKeyboardButton("➡️", callback_data=f"publicacion/c/s:{indice}"))
+        if len(dict_temp[call.from_user.id]) >= maximo:
+            if indice_inicial % maximo != 0:
+                    
+                markup_canales.row(
+                    InlineKeyboardButton("⬅️", callback_data=f"publicacion/c/s:{indice_inicial - (indice_inicial % maximo)}"),
+                    InlineKeyboardButton("➡️", callback_data=f"publicacion/c/s:{indice}"))
+                
+            else:
+                
+                markup_canales.row(
+                    InlineKeyboardButton("⬅️", callback_data=f"publicacion/c/s:{indice_inicial-maximo}"),
+                    InlineKeyboardButton("➡️", callback_data=f"publicacion/c/s:{indice}"))
+                
         
         markup_canales.row(
             #select_bethween
@@ -884,13 +946,14 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
     
     if operacion == "guardar":
         
+        
         try:
             
             dict_temp[call.from_user.id] = collection.count_documents({}) + 1 
             
             collection.insert_one(
                 {"_id": dict_temp[call.from_user.id],
-                "fecha" : time.time(),
+                "fecha" : calcular_diferencia_horaria(devolver="peru"),
                 "archivo" : archivo.read()
                 }
                 )
@@ -906,7 +969,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
                 
                 collection.insert_one(
                     {"_id": dict_temp[call.from_user.id],
-                    "fecha" : time.time(),
+                    "fecha" : calcular_diferencia_horaria(devolver="peru"),
                     "archivo" : archivo.read()
                     }
                     )
@@ -922,7 +985,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
                         
                         collection.insert_one(
                             {"_id": random.randint(1, 1000),
-                            "fecha" : time.time(),
+                            "fecha" : calcular_diferencia_horaria(devolver="peru"),
                             "archivo" : archivo.read()
                             }
                             )
@@ -947,7 +1010,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
             
         dict_temp[call.from_user.id] = collection.find_one({"_id": dict_temp[call.from_user.id]})
         
-        return {"_id": dict_temp[call.from_user.id]["_id"], "fecha" : time.strftime(f"<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y", time.gmtime(calcular_diferencia_horaria(dict_temp[call.from_user.id]["fecha"], "hora_peru")))}
+        return {"_id": dict_temp[call.from_user.id]["_id"], "fecha" : time.strftime(f"<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y", time.localtime(dict_temp[call.from_user.id]["fecha"]))}
     
     
     
@@ -957,6 +1020,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
     elif operacion == "ver":
         
         # conexionDB._init_kwargs["host"]
+        
         
         try:
             if collection.count_documents({}) == 0:
@@ -982,7 +1046,8 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
                 InlineKeyboardButton("Eliminar Archivo 💥", callback_data="db_eliminar:{}".format(diccionario['_id']))
                 )
 
-            bot.send_document(call.message.chat.id, diccionario["archivo"], caption="ID de archivo: {}\n\n<u>Fecha Creación</u>:\n{}".format(diccionario['_id'], time.strftime('<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y', time.gmtime(calcular_diferencia_horaria(diccionario['fecha'], "hora_peru")))), reply_markup=markup)
+                
+            bot.send_document(call.message.chat.id, diccionario["archivo"], caption="ID de archivo: {}\n\n<u>Fecha Creación</u>:\n{}".format(diccionario['_id'], time.strftime('<b>Hora</b>: %H:%M %p\n<b>Fecha</b>: %d/%m/%Y', time.gmtime(calcular_diferencia_horaria(diccionario['fecha'], "hora_peru")))), visible_file_name=f"Copia_Seguridad_{diccionario['_id']}.zip", reply_markup=markup)
             
             
         return
@@ -1069,11 +1134,11 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
             except Exception as e:
                 
                 if "member list is inaccessible" in str(e.args):
-                    dict_temp[call.from_user.id]+=f"❌¡Ni siquiera soy miembro de <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)!\nHazme admin ahí para poder agregarlo\n\n"
+                    dict_temp[call.from_user.id]+=f"❌¡Ni siquiera soy miembro de <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)! Hazme admin ahí para poder agregarlo\n\n"
                     continue
                 
                 else:
-                    dict_temp[call.from_user.id]+=f"❌¡Ha ocurrido un error con el chat de: <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)!\n\n<u>Descripción del error</u>\n{e}\n\n"
+                    dict_temp[call.from_user.id]+=f"❌¡Ha ocurrido un error con el chat de: <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)!\n<u>Descripción del error</u>:\n{e}\n\n"
                     continue
             
             if not bot.get_chat_member(canal, bot.user.id).status == "administrator":
@@ -1131,7 +1196,7 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
             canal = "@" + message.text.split(r"/")[-1]
         
         elif message.text.isdigit() or message.text.startswith("-"):
-            canal=int(canal)
+            canal=int(message.text)
                 
         elif not message.text.startswith("@"):
             canal=f"@{message.text}"
@@ -1144,7 +1209,7 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
         except Exception as e:
                 
             if "member list is inaccessible" in str(e.args):
-                dict_temp[call.from_user.id]+=f"❌¡Ni siquiera soy miembro de <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)!\nHazme admin ahí para poder agregarlo"
+                dict_temp[call.from_user.id]+=f"❌¡Ni siquiera soy miembro de <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)! Hazme admin ahí para poder agregarlo"
 
             
             else:

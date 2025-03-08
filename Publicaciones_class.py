@@ -66,6 +66,13 @@ class Publicaciones():
                 else:
                     diccionario["photo"]=[self.multimedia[0], self.texto]
                     
+            if self.multimedia[1]=="voice":
+                if self.markup:
+                    diccionario["voice"]=[self.multimedia[0], self.texto, self.markup]
+                    
+                else:
+                    diccionario["voice"]=[self.multimedia[0], self.texto]
+                    
             elif self.multimedia[1]=="video": #video
                 if self.markup:
                     diccionario["video"]=[self.multimedia[0], self.texto, self.markup]

@@ -23,7 +23,8 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
 # HOST_URL = os.environ["mongodb_url"]
-HOST_URL = "mongodb://localhost:27017"
+if not os.environ.get("HOST_URL"):
+    HOST_URL = "mongodb://localhost:27017"
 
 
 #----------------Variables------------------------
@@ -33,13 +34,14 @@ bot=telebot.TeleBot(os.environ["token"], "html", disable_web_page_preview=True)
 
 # admin=1413725506
 admin = os.environ["admin"]
-lote_publicaciones={}
+lote_publicaciones={} 
 lista_canales=[]
 lista_seleccionada=[]
 if os.name=="nt":
     OS="\\"
 else:
     OS="/"
+
 
 hilo_publicaciones_activo=False
 hilo_publicar=False
@@ -126,7 +128,7 @@ def guardar_variables(nuevo=False):
         
     
 if os.path.isfile("publicaciones.dill"):
-    lote_publicaciones=cargar_variables()
+    lote_publicaciones=usefull_functions.cargar_variables()
     
     for publicacion in lote_publicaciones:
         lote_publicaciones[publicacion].proxima_publicacion=False
@@ -150,55 +152,7 @@ bot.send_message(admin, "Estoy online bitch >:D")
 
 
 
-def agregar_multimedia(publicacion, message):
-    os.chdir(f"{os.path.dirname(os.path.abspath(__file__))}{OS}Publicaciones_media") #Redirección a la carpeta de medios para guardar el archivo
 
-    if message.content_type=="photo":
-        with open(f"{publicacion.ID}_{os.path.basename(bot.get_file(message.photo[-1].file_id).file_path)}", "wb") as archivo:
-            archivo.write(bot.download_file(bot.get_file(message.photo[-1].file_id).file_path))
-            publicacion.multimedia=[os.path.abspath(archivo.name), "photo"]
-            
-            
-    elif message.content_type=="video":
-        with open(f"{publicacion.ID}_{os.path.basename(bot.get_file(message.video.file_id).file_path)}", "wb") as archivo:
-            archivo.write(bot.download_file(bot.get_file(message.video.file_id).file_path))
-            publicacion.multimedia=[os.path.abspath(archivo.name), "video"]
-            
-            
-    elif message.content_type=="audio":
-        
-        try:
-            extension="." + str(os.path.basename(bot.get_file(message.audio.file_id).file_path).split(".")[-1])
-            nombre=f"{message.audio.performer} - {message.audio.title}{extension}"
-        except:
-            contador=0
-            for i in message.audio.file_name:
-                if not i.isdigit():
-                    break
-                else:
-                    contador+=1
-                    
-            nombre=f"{message.audio.file_name[contador:]}"
-            
-        with open(f"{publicacion.ID}_{nombre}", "wb") as archivo:
-            archivo.write(bot.download_file(bot.get_file(message.audio.file_id).file_path))
-            publicacion.multimedia=[os.path.abspath(archivo.name), "audio"]
-    
-
-
-            
-    elif message.content_type=="document":
-        with open(f"{publicacion.ID}_{os.path.basename(bot.get_file(message.document.file_id).file_path)}", "wb") as archivo:
-            archivo.write(bot.download_file(bot.get_file(message.document.file_id).file_path))
-            publicacion.multimedia=[os.path.abspath(archivo.name), "document"]
-            
-    else:
-        print("Al parecer, no había ningún documento que pudiera guardar")
-        os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        return False
-
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    return True
 
 
 
@@ -235,7 +189,6 @@ def cmd_being_sure_you_are_admin(message):
         del message
         return
     
-    
     bot.send_message(message.chat.id,f"Lo siento :( Este bot <b>SOLAMENTE</b> puede ser usado por @{bot.get_chat(admin).username}")
     bot.send_message(message.chat.id, "Bot creado por @mistakedelalaif")
     del message
@@ -261,7 +214,7 @@ def cmd_host_information(message):
         res = usefull_functions.calcular_diferencia_horaria(devolver="peru")
         if  isinstance(res, float) or  isinstance(res, int):
         
-            bot.send_message(message.chat.id, "La hora actual del host es: " + time.strftime(r"%c" ,time.localtime()) + "\n\n" + "La hora actual de Perú es: " + time.strftime(r"%c",time.gmtime(res)))
+            bot.send_message(message.chat.id, "La hora actual del host es: " + time.strftime(r"%c" ,time.localtime()) + "\n\n" + "La hora actual de Perú es: " + time.strftime(r"%c",time.localtime(res)))
             
         else:
             
@@ -292,7 +245,12 @@ def cmd_panel(message):
     global operacion
     if os.path.isfile("BD_Canales_prueba.db"):
         os.remove("BD_Canales_prueba.db")
-        
+    
+    
+    try:
+        lista_seleccionada.clear()
+    except:
+        pass
     
     panel=InlineKeyboardMarkup(row_width=1)
     panel.add(
@@ -365,10 +323,16 @@ def callback_lista_canales_elegir(call):
 
 @bot.callback_query_handler(func=lambda call: "publicacion" in call.data or "operacion" in call.data)
 def callback_publicacion(call):
-
     operacion = publicaciones_callback.l_operacion
     
-    publicaciones_callback.main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_canales, lista_seleccionada, hilo_publicaciones_activo, dic_temp, operacion)
+    try:
+        publicaciones_callback.main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_canales, lista_seleccionada, hilo_publicaciones_activo, dic_temp, operacion)
+        
+    except Exception as e:
+        if "KeyError" in str(e.args):
+            bot.answer_callback_query(call.id, "¡La publicacion ya no existe!")
+            
+    return
 
 
 
@@ -386,11 +350,13 @@ def callback_publicacion(call):
         for publicacion in lote_publicaciones:
             lote_publicaciones[publicacion].proxima_publicacion = False
             
-        guardar_variables()
+        usefull_functions.guardar_variables(lote_publicaciones)
         
 
 
     else:
+        lote_publicaciones = usefull_functions.cargar_variables()
+        
         if len(lote_publicaciones)==0:
             markup=InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton("Agregar publicación 📋🪒", callback_data="publicacion"))
@@ -399,7 +365,7 @@ def callback_publicacion(call):
             
         hilo_publicaciones_activo=True
         
-        guardar_variables()
+        usefull_functions.guardar_variables(lote_publicaciones)
         
         bot.send_message(call.from_user.id, "Muy Bien, Iniciaré el <b>Hilo de Publicaciones</b>")
         
