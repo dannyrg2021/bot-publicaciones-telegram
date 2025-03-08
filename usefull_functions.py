@@ -1105,7 +1105,7 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
         #Al parecer si lo hizo
         contador=0
         
-        for canal in lista:
+        for num, canal in enumerate(lista, start=1):
             canal=canal.strip()
             
             #llamar a la base de datos en cada iteración para asegurarse de que los canales enviados no se repiten en el mismo mensaje
@@ -1138,7 +1138,13 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
                     continue
                 
                 else:
-                    dict_temp[call.from_user.id]+=f"❌¡Ha ocurrido un error con el chat de: <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)!\n<u>Descripción del error</u>:\n{e}\n\n"
+                    try:
+                        dict_temp[call.from_user.id]+=f"❌¡Ha ocurrido un error con el chat de: <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)!\n<u>Descripción del error</u>:\n{e}\n\n"
+                        
+                    except Exception as e:
+                        if "chat not found" in str(e.args):
+                            dict_temp[call.from_user.id]+=f"❌¡El chat ingresado en la posición #{num} no existe o no fué encontrado!\n\n"
+                        
                     continue
             
             if not bot.get_chat_member(canal, bot.user.id).status == "administrator":
