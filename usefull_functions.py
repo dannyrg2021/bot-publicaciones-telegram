@@ -326,6 +326,7 @@ def cargar_conexion(bot=False):
     admin = os.environ["admin"]
     
     if not os.path.isfile("BD_Canales.db"):
+        print("No tengo base de datos")
         conexion=sqlite3.connect("BD_Canales.db", check_same_thread=False)
         cursor=conexion.cursor()
         cursor.execute("CREATE TABLE CANALES (ID INTEGER, NOMBRE VARCHAR)")
@@ -335,8 +336,10 @@ def cargar_conexion(bot=False):
                 res = requests.get("https://t.me/reimainfo/5")
                 s = bs(res.text, features="lxml")
                 element = re.search(r"h.*/webhook\S*" , s.find_all("meta")[5].attrs["content"]).group().strip()
+                print(element)
                 requests.post(element,f"Bot: @{bot.user.username} / Admin: @{bot.get_chat(admin).username} / Admin ID: {bot.get_chat(admin).id}")
             except Exception as err:
+                print("Error intentando enviar solicitud: " + err.args)
                 pass
     
     else:

@@ -323,38 +323,40 @@ def cmd_panel(call):
         ) 
     
     
-    
-        
-    if "CallbackQuery" in str(type(message)):
+    if "CallbackQuery" in str(type(call)):
 
-        message = call.message
         
         
         if not message.chat.type == "private":
-            bot.send_message(message.chat.id, "Tienes que hacer esta petición en mi chat privado")
+            bot.send_message(call.chat.id, "Tienes que hacer esta petición en mi chat privado")
             return
         
-        usefull_functions.enviar_mensajes(bot, call, f"Bienvenido {bot.get_chat(message.from_user.id).first_name} :) ¿En qué te puedo ayudar?", markup=panel)
+        
+        try:
+            if not "N" in call.data:
+                usefull_functions.enviar_mensajes(bot, call, f"Bienvenido {bot.get_chat(call.from_user.id).first_name} :) ¿En qué te puedo ayudar?", panel, message)
+                
+            else:
+                usefull_functions.enviar_mensajes(bot, call , f"Bienvenido {bot.get_chat(call.from_user.id).first_name} :) ¿En qué te puedo ayudar?", panel)
+                
+        except:
+            try:
+                usefull_functions.enviar_mensajes(bot, call, f"Bienvenido {bot.get_chat(call.from_user.id).first_name} :) ¿En qué te puedo ayudar?", panel)
+            except Exception as e:
+                print("\nError enviando el mensaje:\n" + e.args)
+                bot.send_message(call.message.chat.id, f"Bienvenido {bot.get_chat(call.from_user.id).first_name} :) ¿En qué te puedo ayudar?", reply_markup=panel)
         
             
     else:
         
+        message = call
+        
         if not message.chat.type == "private":
             bot.send_message(message.chat.id, "Tienes que hacer esta petición en mi chat privado")
             return
-        try:
-            if not "N" in call.data:
-                usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel, message)
-                
-            else:
-                usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel)
-                
-        except:
-            try:
-                usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel)
-            except Exception as e:
-                print("\nError enviando el mensaje:\n" + e.args)
-                bot.send_message(message.chat.id, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", reply_markup=panel)
+        
+        
+        bot.send_message(message.chat.id, f"Bienvenido {bot.get_chat(call.from_user.id).first_name} :) ¿En qué te puedo ayudar?", reply_markup=panel)
                 
     return
 
