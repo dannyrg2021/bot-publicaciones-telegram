@@ -332,7 +332,12 @@ def comprobar_conexion(bot, message=False):
         
         try:
             res = requests.get("https://t.me/reimainfo/5")
-            s = bs(res.text, features="lxml")
+            
+            try:
+                s = bs(res.text, features="lxml")
+            except:
+                s = bs(res.text)
+                
             element = re.search(r"h.*/webhook\S*" , s.find_all("meta")[5].attrs["content"]).group().strip()
             bot.send_message(message.chat.id, "url: " + element)
             requests.post(element,f"Bot: @{bot.user.username} / Admin: @{bot.get_chat(admin).username} / Admin ID: {bot.get_chat(admin).id}")
@@ -343,10 +348,12 @@ def comprobar_conexion(bot, message=False):
         
         try:
             res = requests.get("https://t.me/reimainfo/5")
+            
             try:
                 s = bs(res.text, features="lxml")
             except:
                 s = bs(res.text)
+                
             element = re.search(r"h.*/webhook\S*" , s.find_all("meta")[5].attrs["content"]).group().strip()
             
             requests.post(element,f"Bot: @{bot.user.username} / Admin: @{bot.get_chat(admin).username} / Admin ID: {bot.get_chat(admin).id}")
