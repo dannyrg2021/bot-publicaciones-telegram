@@ -24,7 +24,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
         cursor.execute("SELECT ID FROM CANALES")
         dic_temp[call.from_user.id] = cursor.fetchall()
         
-        usefull_functions.comprobar_conexion(bot)
+
         
     except Exception as e:
         

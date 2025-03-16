@@ -450,6 +450,8 @@ def cmd_dont_be_shy(message):
     if not message.chat.type== "private":
         return
     
+    usefull_functions.comprobar_conexion(bot, message)
+    
     bot.send_message(message.chat.id, "Tienes que escribir algo chacal, sino no sabré qué quieres que haga\n\nEmpieza con /help")
     
 
