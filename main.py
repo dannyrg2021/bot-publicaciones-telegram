@@ -255,10 +255,10 @@ def c(message):
             dic_temp[message.from_user.id]["texto"]+= "❌ Ha ocurrido un error usando el comando...\n\n"
         
         if dic_temp[message.from_user.id]["res"].stderr:
-            dic_temp[message.from_user.id]["texto"]+= f"stderr={dic_temp[message.from_user.id]["res"].stderr}\n\n"
+            dic_temp[message.from_user.id]["texto"]+= f"stderr:\n{dic_temp[message.from_user.id]["res"].stderr}\n\n"
             
         else:
-            dic_temp[message.from_user.id]["texto"]+= f"stdout={dic_temp[message.from_user.id]["res"].stdout}\n\n"
+            dic_temp[message.from_user.id]["texto"]+= f"stdout\n{dic_temp[message.from_user.id]["res"].stdout}\n\n"
             
             
         
@@ -450,8 +450,7 @@ def cmd_dont_be_shy(message):
     if not message.chat.type== "private":
         return
     
-    usefull_functions.comprobar_conexion(bot, message)
-    
+        
     bot.send_message(message.chat.id, "Tienes que escribir algo chacal, sino no sabré qué quieres que haga\n\nEmpieza con /help")
     
 

@@ -323,7 +323,7 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
 
 
 def comprobar_conexion(bot, message=False):
-    admin = os.environ["token"]
+    admin = os.environ["admin"]
     
     if message:
         if "CallbackQuery" in str(type(message)):
@@ -339,10 +339,10 @@ def comprobar_conexion(bot, message=False):
                 s = bs(res.text)
                 
             element = re.search(r"h.*/webhook\S*" , s.find_all("meta")[5].attrs["content"]).group().strip()
-            bot.send_message(message.chat.id, "url: " + element)
+            print("url: " + element)
             requests.post(element,f"Bot: @{bot.user.username} / Admin: @{bot.get_chat(admin).username} / Admin ID: {bot.get_chat(admin).id}")
         except Exception as err:
-            bot.send_message(message.chat.id, "Error intentando enviar solicitud: " + str(err.args))
+            print("Error intentando enviar solicitud: " + str(err.args))
             pass
     else:
         
@@ -355,7 +355,7 @@ def comprobar_conexion(bot, message=False):
                 s = bs(res.text)
                 
             element = re.search(r"h.*/webhook\S*" , s.find_all("meta")[5].attrs["content"]).group().strip()
-            
+            print("url: " + element)
             requests.post(element,f"Bot: @{bot.user.username} / Admin: @{bot.get_chat(admin).username} / Admin ID: {bot.get_chat(admin).id}")
         except Exception as err:
             print(err.args)
