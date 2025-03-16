@@ -327,7 +327,7 @@ def cmd_panel(call):
 
         
         
-        if not message.chat.type == "private":
+        if not call.message.chat.type == "private":
             bot.send_message(call.chat.id, "Tienes que hacer esta petición en mi chat privado")
             return
         

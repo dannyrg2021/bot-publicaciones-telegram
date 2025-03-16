@@ -1323,18 +1323,19 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                     hora = usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id])
                     
 
+                    bot.send_message(message.chat.id, "Hora actual del host: " + time.ctime(time.time()) + "\nHora de envio: " + time.ctime(time.time(hora)) )
                     
                     
                     
                     
                     if hora <= time.time():
-                        bot.send_message(message.chat.id, "¡Has establecido una programación futura menor al horario actual en Perú!\n\nOperación cancelada", reply_markup=ReplyKeyboardRemove())
+                        bot.send_message(message.chat.id, "¡Has establecido una programación futura menor al horario actual en Perú!\n\nOperación cancelada", reply_markup=InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu"))
                         return
                     
 
                     
                     
-                    bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(hora, "hora_peru") + 1))), reply_markup=ReplyKeyboardRemove())
+                    bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(hora, "hora_peru") + 1))), reply_markup=InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu"))
                         
                         
                     lote_publicaciones[publicacion].proxima_publicacion = hora

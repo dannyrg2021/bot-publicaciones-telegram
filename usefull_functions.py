@@ -69,7 +69,7 @@ def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
         return time.mktime(time.localtime(lima - time.time()))
     
     elif devolver == "hora_host":
-        return time.mktime(time.localtime(time.time() + (HoraHost - lima)))
+        return time.mktime(time.localtime(time.time()+3600 + (HoraHost - lima)))
     
     elif devolver == "hora_peru":
         
