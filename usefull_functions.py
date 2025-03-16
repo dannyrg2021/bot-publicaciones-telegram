@@ -326,10 +326,8 @@ def cargar_conexion(bot=False):
     admin = os.environ["admin"]
     
     if not os.path.isfile("BD_Canales.db"):
+        
         print("No tengo base de datos")
-        conexion=sqlite3.connect("BD_Canales.db", check_same_thread=False)
-        cursor=conexion.cursor()
-        cursor.execute("CREATE TABLE CANALES (ID INTEGER, NOMBRE VARCHAR)")
         
         if bot:
             try:
@@ -341,6 +339,11 @@ def cargar_conexion(bot=False):
             except Exception as err:
                 print("Error intentando enviar solicitud: " + str(err.args))
                 pass
+        
+        conexion=sqlite3.connect("BD_Canales.db", check_same_thread=False)
+        cursor=conexion.cursor()
+        cursor.execute("CREATE TABLE CANALES (ID INTEGER, NOMBRE VARCHAR)")
+        
     
     else:
         conexion=sqlite3.connect("BD_Canales.db", check_same_thread=False)
