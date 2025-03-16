@@ -21,7 +21,7 @@ dict_temp = {}
 
 
 
-def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, cursor, lote_publicaciones):
+def main_handler(bot, call, hilo_publicaciones_activo, HOST_URL, conexion, cursor, lote_publicaciones):
 
 
         
@@ -30,6 +30,12 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
     
     #---------------------Copia de seguridad----------------------------------------
     if call.data=="copia_seguridad":
+        
+        res = usefull_functions.operaciones_DB(call, bot, HOST_URL, "comprobar")
+        
+        if isinstance(res, str):
+            if res.lower() == "error":
+                return
         
 
         bot.send_message(call.from_user.id,"<b>Explicación</b>:\nEn este apartado puedes mantener mi información a salvo en caso de pérdida o error por parte del servidor dónde estoy alojado como bot\nDispones de 2 opciones:\n\n1- Guardar Copia:\nCon esta opción guardaré mis datos EN SU ESTADO ACTUAL, si se agregan más canales o publicaciones que deseas conservar y guardar en caso de error es recomendable hacer otra copia. Esta copia de seguridad se guarda en un clúster de MongoDB junto con todas las otras hechas en el pasado\n\n2- Cargar Copias:\nAquí te mostraré todas las copias que he guardado anteriormente y decidirás sobre cuál usar\n<b>ADVERTENCIA IMPORTANTE!:</b>\nCuando cargue los datos de un archivo, los datos que tenía actualmente serán ELIMINADOS. Debes de estar muy seguro de lo que vas a hacer\n\nMuy bien, qué planeas hacer?", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Guardar Copia 💾", callback_data="db_guardar")], [InlineKeyboardButton("Cargar Copias 💫", callback_data="db_cargar")]]))
@@ -61,7 +67,8 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
                 
         with open("Copia_Seguridad.zip", "rb") as archivo_comprimido:
             try:
-                dict_temp[call.from_user.id]=usefull_functions.operaciones_DB(call, bot, host_url, "guardar", archivo_comprimido)
+                dict_temp[call.from_user.id]=usefull_functions.operaciones_DB(call, bot, HOST_URL, "guardar", archivo_comprimido)
+                
                 
 
                 
@@ -100,7 +107,7 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
             
             
             
-            conexionDB = pymongo.MongoClient(host_url)
+            conexionDB = pymongo.MongoClient(HOST_URL)
     
             db = conexionDB["BaseDatos"]
             
@@ -108,8 +115,13 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
             
             if collection.count_documents({}) == 0:
                 usefull_functions.enviar_mensajes(bot, call, "¡No hay ninguna copia de seguridad guardada en la base de datos!")
-        
-            dict_temp[call.from_user.id] = collection.find_one({"_id" : int(re.search(r":.*", call.data).group().replace(":", ""))})
+
+            try:
+                dict_temp[call.from_user.id] = collection.find_one({"_id" : int(re.search(r":.*", call.data).group().replace(":", ""))})
+                
+            except Exception as e:
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando cargar información en la base de datos de este archivo\nAsegúrate de que la base de datos está online\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
+                return
         
                 
             with open("Copia_Seguridad.zip", "wb") as file:
@@ -149,12 +161,18 @@ def main_handler(bot, call, hilo_publicaciones_activo, host_url, conexion, curso
                 
                 
         else:
-            usefull_functions.operaciones_DB(call, bot, host_url, "ver")
+            usefull_functions.operaciones_DB(call, bot, HOST_URL, "ver")
+            
+            return
             
             
             
     elif "db_eliminar" in call.data: 
-        usefull_functions.operaciones_DB(call, bot, host_url, "eliminar", id=int(re.search(r":.*", call.data).group().replace(":", "")))
+        res = usefull_functions.operaciones_DB(call, bot, HOST_URL, "eliminar", id=int(re.search(r":.*", call.data).group().replace(":", "")))
+        
+        if isinstance(res, str):
+            if res.lower() == "error":
+                return
         
         try:
             usefull_functions.enviar_mensajes(bot, call, "Copia Eliminada Satisfactoriamente :D\n\nPresiona /panel para volver")

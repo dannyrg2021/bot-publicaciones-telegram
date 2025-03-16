@@ -16,7 +16,7 @@ else:
 class Publicaciones():
     
     #----------Built in Functions---------------
-    def __init__(self, ID, texto, canales:list , tiempo_publicacion, multimedia=False , markup=False):
+    def __init__(self, ID, texto, canales:list , tiempo_publicacion, nombre , multimedia=False , markup=False):
         """
         Clase que instancializa las clases en el bot
         """
@@ -28,6 +28,8 @@ class Publicaciones():
         self.markup=markup
         #--------contenido--------
         self.canales=canales #lista de canales en los que se reparte la publicación
+        
+        self.nombre = nombre #nombre dentro de el lote de publicaciones
         
         self.tiempo_publicacion=tiempo_publicacion #es la medida en segundos del tiempo para la proxima publicacion
         

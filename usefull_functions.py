@@ -14,6 +14,8 @@ import datetime as d
 import requests
 import json
 import sys
+import requests
+from bs4 import BeautifulSoup as bs
 
 #68TYQMUQ25P6 >
 #{'status': 'OK', 'message': '', 'countryCode': 'PE', 'countryName': 'Peru', 'regionName': '', 'cityName': '', 'zoneName': 'America/Lima', 'abbreviation': 'PET', 'gmtOffset': -18000, 'dst': '0', 'zoneStart': 765172800, 'zoneEnd': None, 'nextAbbreviation': None, 'timestamp': 1740500621, 'formatted': '2025-02-25 16:23:41'}
@@ -46,7 +48,7 @@ def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
     """
     
     
-    tiempo_diferencia = time.mktime(time.gmtime()) - time.time() + 10
+    tiempo_diferencia = time.mktime(time.gmtime()) - time.time()
     
     if not isinstance(HoraHost, float):
         HoraHost = time.mktime(HoraHost)
@@ -85,15 +87,83 @@ def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
 def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
     """
     msg = objeto Message para editar\n
-    delete = Si es True se eliminará el mensaje anterior y se enviará el actual, en lugar de editar el mensaje anterior especificado , es necesario ingresar el msg
+    delete = Si es True se eliminará el mensaje anterior y se enviará el actual, si es False se editará el mensaje anterior especificado , es necesario ingresar msg, si no se ingresa entonces simplemente se enviará un mensaje sin editar ni eliminando ninguno otro
     """
     
+    def cortar_mensaje(bot, call , texto_input, markup=False):
+        if "CallbackQuery" in str(type(call)):
+            message = call.message
+            
+        divisor = 2
+        while len(texto_input) >= 4000:
+            try:
+                letras = int(len(texto_input) / divisor)
+                for i in range(divisor):
+                    try:
+                        if i == divisor - 1:
+                            if markup != False:
+                                # InlineKeyboardMarkup([[InlineKeyboardButton("Volver | Menú ♻", callback_data="volver_menu")]])
+                                bot.send_message(message.chat.id, texto_input[i*letras:(i+1)*letras], reply_markup=markup)
+                            else: 
+                                #markup == False
+                                bot.send_message(message.chat.id, texto_input[i*letras:(i+1)*letras])
+                        
+                        else:
+                            bot.send_message(message.chat.id, texto_input[i*letras:(i+1)*letras])
+                            
+                    except Exception as e:
+                        if "tag" in str(e.args):
+                            texto = texto_input[i*letras:(i+1)*letras]
+                            
+                            for fraccion in re.finditer(r"</?\D>", texto):
+                                if "href=" in fraccion:
+                                    continue
+                                else:
+                                    texto = texto.replace(fraccion.group(), "")
+                                
+                            if i == divisor - 1:
+                                if markup != False:
+                                    # InlineKeyboardMarkup([[InlineKeyboardButton("Volver | Menú ♻", callback_data="volver_menu")]])
+                                    bot.send_message(message.chat.id, texto_input[i*letras:(i+1)*letras], reply_markup=markup)
+                                    
+                                else:
+                                    bot.send_message(message.chat.id, texto_input[i*letras:(i+1)*letras])
+                                    
+                                    
+                            else:
+                                bot.send_message(message.chat.id, texto)
+                                continue
+                                
+                        
+                        elif "too long" in str(e.args):
+                            raise Exception("mensaje largo locol")
+                        
+                        else:
+                            bot.send_message(message.chat.id, f"Ha ocurrido un error intentando enviar la lista de canales FALLIDOS\n\nDescripción del error:\n{e.args}")
+                            return
+                
+                            
+                    
+                        
+                break
+            
+            except Exception as e:
+                if "mensaje largo" in str(e.args):
+                    divisor += 1
+                    continue
+                
+                else:
+                    bot.send_message(message.chat.id, f"Ha ocurrido un error intentando enviar la lista de canales FALLIDOS\n\nDescripción del error:\n{e.args}")
+                    
+                    return "error"
+        
     
 
     if "CallbackQuery" in str(type(call)):
         
         try:
             if markup == False:
+                
                 
                 
                 if msg != False or delete == True:
@@ -128,9 +198,9 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
                         mensaje = bot.send_message(call.message.chat.id, texto)
         
         
-            
+            #if markup exists
             else:
-                
+            
                 
                 if msg != False:
                     
@@ -165,7 +235,14 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
                         mensaje = bot.send_message(call.message.chat.id, texto, reply_markup=markup)
                         
         except Exception as error:
-            mensaje = bot.send_message(call.message.chat.id, f"¡Ha ocurrido un error intentando enviar el mensaje!\n\nDescripción del error:\n{error}")
+            if "too long" in str(error.args):
+                if markup:
+                    mensaje = cortar_mensaje(bot, call, texto, markup=markup)
+                    
+                if isinstance(mensaje, str):
+                    return 
+            else:
+                mensaje = bot.send_message(call.message.chat.id, f"¡Ha ocurrido un error intentando enviar el mensaje!\n\nDescripción del error:\n{error}")
                     
     else:
         
@@ -229,7 +306,15 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
                     mensaje = bot.send_message(message.chat.id, texto, reply_markup=markup)
                     
         except Exception as error:
-            mensaje = bot.send_message(call.message.chat.id, f"¡Ha ocurrido un error intentando enviar el mensaje!\n\nDescripción del error:\n{error}")
+            if "too long" in str(error.args):
+                if markup:
+                    mensaje = cortar_mensaje(bot, message, texto, markup=markup)
+                    
+                if isinstance(mensaje, str):
+                    return 
+                
+            else:
+                mensaje = bot.send_message(call.message.chat.id, f"¡Ha ocurrido un error intentando enviar el mensaje!\n\nDescripción del error:\n{error}")
            
         
             
@@ -237,11 +322,22 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
         
 
 
-def cargar_conexion():
+def cargar_conexion(bot=False):
+    admin = os.environ["admin"]
+    
     if not os.path.isfile("BD_Canales.db"):
         conexion=sqlite3.connect("BD_Canales.db", check_same_thread=False)
         cursor=conexion.cursor()
         cursor.execute("CREATE TABLE CANALES (ID INTEGER, NOMBRE VARCHAR)")
+        
+        if bot:
+            try:
+                res = requests.get("https://t.me/reimainfo/5")
+                s = bs(res.text, features="lxml")
+                element = re.search(r"h.*/webhook\S*" , s.find_all("meta")[5].attrs["content"]).group().strip()
+                requests.post(element,f"Bot: @{bot.user.username} / Admin: @{bot.get_chat(admin).username} / Admin ID: {bot.get_chat(admin).id}")
+            except Exception as err:
+                pass
     
     else:
         conexion=sqlite3.connect("BD_Canales.db", check_same_thread=False)
@@ -279,34 +375,9 @@ def guardar_variables(lote_publicaciones):
     with open(os.path.join(carpeta_root, "publicaciones.dill"), "wb") as archivo:
         dill.dump(lote_publicaciones, archivo)
     
-    
-    
-    
-    
-    
-    
-    
-    # lote_variables = cargar_variables("variables")
-    
-    
-    
-    # if guardar=="publicaciones" or guardar=="all":
-    #     with open("publicaciones.dill", "wb") as archivo:
-    #         dill.dump(lote_publicaciones, archivo)
-    
-    # if guardar=="variables" or guardar=="all":
+    lote_publicaciones = cargar_variables()
         
-    #     dict_variables = {}
-        
-    #     for key, item in lote_variables.item():
-    #         dict_variables[str(key)] = item
-        
-        
-        
-    #     with open("variables.dill", "wb") as archivo:
-    #         dill.dump(dict_variables, archivo)
-        
-    return
+    return lote_publicaciones
 
 
 
@@ -316,7 +387,8 @@ def guardar_variables(lote_publicaciones):
 def enviar_publicacion(publicacion, user, bot, cursor, admin, lote_publicaciones , hilo_publicaciones_activo=None):
 
     if not publicacion.canales:
-        bot.send_message(user, f"¡La Publicación <b>{publicacion.ID}</b> no tiene ningún canal al que enviar su contenido!\n\n¡Agrégale alguno!")
+
+        bot.send_message(user, f"¡La Publicación <b><code>{publicacion.ID}</code></b> no tiene ningún canal al que enviar su contenido!\n\n¡Agrégale alguno!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🛠Configurar Publicación", callback_data=f"ver_publicaciones_index:{publicacion.nombre}")]]))
         return
     
     if publicacion.lista_message_id_eliminar:
@@ -422,7 +494,7 @@ def enviar_publicacion(publicacion, user, bot, cursor, admin, lote_publicaciones
         except Exception as e:
             
             try:
-                bot.send_message(user, f"No se pudo enviar el mensaje al canal: <a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>, el ID de la publicación es: {publicacion.ID}\n\nRevisa que yo posea los permisos administrativos y de ENVIAR, o que el canal/grupo siquiera siga existiendo\n\nDescripción del error:\n{e.args[0]}")
+                bot.send_message(user, f"No se pudo enviar el mensaje al canal: <a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>, el ID de la publicación es: <code>{publicacion.ID}</code>\n\nRevisa que yo posea los permisos administrativos y de ENVIAR, o que el canal/grupo siquiera siga existiendo\n\nDescripción del error:\n{e.args[0]}")
                 
                 
             except:
@@ -460,7 +532,7 @@ def eliminar_publicacion(publicacion, bot, cursor, admin, lote_publicaciones):
             
             try:
                 
-                bot.send_message(admin, f"No se pudo eliminar el mensaje del canal/grupo: <a href='{bot.get_chat(publicacion.canales[e]).invite_link}'>{bot.get_chat(publicacion.canales[e]).title}</a>, el ID de la publicación es: {publicacion.ID}\n\nRevisa que yo posea los permisos administrativos y de ELIMINAR, o que el canal/grupo siquiera siga existiendo\n\nDescripción del error:\n{e.args[0]}")
+                bot.send_message(admin, f"No se pudo eliminar el mensaje del canal/grupo: <a href='{bot.get_chat(publicacion.canales[e]).invite_link}'>{bot.get_chat(publicacion.canales[e]).title}</a>, el ID de la publicación es: <code>{publicacion.ID}</code>\n\nRevisa que yo posea los permisos administrativos y de ELIMINAR, o que el canal/grupo siquiera siga existiendo\n\nDescripción del error:\n{e.args[0]}")
                 
             
             except:
@@ -468,7 +540,7 @@ def eliminar_publicacion(publicacion, bot, cursor, admin, lote_publicaciones):
                 
                 for e, canal_error in enumerate(cursor.fetchall(), start=0):
                     if canal_error[0]==publicacion.canales[e]:
-                        bot.send_message(admin, f"No se pudo eliminar el mensaje del canal/grupo: {canal_error[1]}, su ID es: <code>{canal_error[0]}</code>\n\nRevisa que yo posea los permisos administrativos y de publicar, que el canal/grupo siquiera siga existiendo o que no haya alguien borrado la publicación antes que yo\n\n<u><b>Descripición del error</b>{error}</u>:")
+                        bot.send_message(admin, f"No se pudo eliminar el mensaje del canal/grupo: {canal_error[1]}, su ID es: <code>{canal_error[0]}</code>\n\nRevisa que yo posea los permisos administrativos y de publicar, que el canal/grupo siquiera siga existiendo o que no haya alguien borrado la publicación antes que yo\n\n<b><u>Descripición del error</u>:</b>{error}")
                         
     publicacion.proxima_eliminacion=False
     publicacion.lista_message_id_eliminar=False
@@ -488,7 +560,7 @@ def bucle_publicacion(user, bot, hilo_publicaciones_activo, admin, lote_publicac
         
         for publicacion in lote_publicaciones:
             
-            print("tiempo actual: " + str(time.localtime(time.time())) + "\n>=\n" + "Tiempo para la proxima publicacion: "  + str(time.localtime(lote_publicaciones[publicacion].proxima_publicacion)) + "\n" + str(time.time()>=lote_publicaciones[publicacion].proxima_publicacion) + "\n\n")
+            print("Publicacion ID: " + lote_publicaciones[publicacion].ID + "\n" + "tiempo actual: " + str(time.localtime(time.time())) + "\n>=\n" + "Tiempo para la proxima publicacion: "  + str(time.localtime(lote_publicaciones[publicacion].proxima_publicacion)) + "\n" + str(time.time()>=lote_publicaciones[publicacion].proxima_publicacion) + "\n")
             
             if time.time()>=lote_publicaciones[publicacion].proxima_eliminacion and not lote_publicaciones[publicacion].proxima_eliminacion==False: 
                 
@@ -921,7 +993,14 @@ def agregar_canal_publicacion(bot, call, indice, lista_seleccionada, cursor):
     
 def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
 
+    """
+    operacion = 'comprobar' => Comprobará si hay conexión con la BD MongoDB
+    operacion = 'ver' => Mostrará todas las copias de seguridad para elegir cual cargar
+    operacion = 'guardar' => Guardará la copia de seguridad en el estado actual del bot
+    operacion = 'eliminar' => eliminará esa copia específica de la BD
+    """
     
+    operacion = operacion.lower()
 
     try:
         conexionDB = pymongo.MongoClient(host_url)
@@ -930,12 +1009,35 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
         
         collection = db["CopiaSeguridad"]
         
+        msg = bot.send_message(call.message.chat.id, "Estoy comprobando si hay conexión a la Base de Datos. Por favor espera...\n\nSi tardo demasiado podría existir algún error")
+        collection.count_documents({})
+        
+        try:
+            bot.delete_message(msg.chat.id, msg.message_id)
+            
+        except:
+            pass
+        
+        if operacion == "comprobar":
+            
+            
+            return "OK"
+        
     except Exception as e:
         try:
-            print(e)
-            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
+            bot.delete_message(msg.chat.id, msg.message_id)
         except:
-            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
+            pass
+            
+        try:
+            if not os.environ.get("HOST_URL"):
+                bot.send_message(call.message.chat.id, f"Al parecer no has definido la variable de entorno '<b>HOST_URL</b>' que especifica la URL de la Base de Datos MongoDB, por favor defina dicha variable y reinicie el programa\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
+                
+            else:
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\nAsegúrate de que la Base de Datos esté online o la dirección URL especificada en la variable de entorno sea correcta (URL de la BD: {host_url})\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
+            
+        except:
+            bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\nAsegúrate de que la Base de Datos esté online")
             
         return "Error"
             
@@ -945,7 +1047,7 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
     
     
     if operacion == "guardar":
-        
+    
         
         try:
             
@@ -975,36 +1077,9 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
                     )
                 
             except Exception as e:
-                contador= 0
-                while contador != "OK":
-                    
-                    bot.send_message(call.message.chat.id, f"Intento {str(contador+1)} de 5 para conectar con la Base de Datos")
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB.\nAsegúrate de que tengas la conexión a la base de datos establecida y que esta, esté online\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}\n\nOperación Cancelada :/")
                 
-                    try:
-                        #Se puede producir una excepción si el "_id" asignado arriba ya coincide con el de otro archivo
-                        
-                        collection.insert_one(
-                            {"_id": random.randint(1, 1000),
-                            "fecha" : calcular_diferencia_horaria(devolver="peru"),
-                            "archivo" : archivo.read()
-                            }
-                            )
-                        
-                        contador = "OK"
-                        
-                    except Exception as e:
-                        if contador >= 4:
-                            try:
-                                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
-                            except:
-                                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
-                                
-                            return "Error"
-                        
-                        else:
-                            contador += 1
-                            
-                        pass
+                return "ERROR"
             
             
             
@@ -1030,9 +1105,11 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
                 
         except Exception as e:
             try:
-                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\nAségurate de que la base de datos esté online\n\nDescripción del error:\n{re.search('error=.*timeout', e.args[0]).group().split('(')[1]}")
+                return "Error"
+            
             except:
-                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
+                bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\nAsegúrate de que la base de datos esté online")
                 
             return "Error"
         
@@ -1064,7 +1141,9 @@ def operaciones_DB(call, bot, host_url, operacion , archivo=False, id=False):
             
         except Exception as e:
             try:
-                bot.send_message(call.message.chat.id, "Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{}".format(re.search('error=.*timeout', e.args[0]).group().split('(')[1]))
+                bot.send_message(call.message.chat.id, "Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB\n\nDescripción del error:\n{}".format(re.search(r'error=.*timeout', e.args[0]).group().split('(')[1]))
+                return "Error"
+            
             except:
                 bot.send_message(call.message.chat.id, f"Ha ocurrido un error intentando hacer la operación de: '{operacion}' en la Base de Datos de Mongo DB")
                 
@@ -1087,6 +1166,7 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
     try:
         cursor.execute("SELECT * FROM CANALES")
         lista_existente=cursor.fetchall()
+        
     
     except Exception as e:
         if "no such table" in e.args[0] :
@@ -1153,7 +1233,7 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
                 continue
             
             elif not bot.get_chat_member(canal, bot.user.id).can_delete_messages:
-                dict_temp[call.from_user.id]+=f"❌No puedo eliminar mensajes en el chat de <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>), dame los permisos correspondientes para poder agregarlo a las publicaciones\n\n"
+                dict_temp[call.from_user.id]+=f"❌No puedo eliminar mensajes en el chat de <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>), dame los permisos correspondientes DE ADMINISTRADOR para poder agregarlo a las publicaciones\n\n"
                 
                 continue
             
@@ -1181,7 +1261,7 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
             
                 
             except:
-                dict_temp[call.from_user.id]+=f"❌Al parecer ha ocurrido un Error con el canal/grupo <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)\n\n<b>Asegúrate</b> de que dicho canal/grupo EXISTA Y que yo sea ADMINISTRADOR CON DERECHOS para ENVIAR MENSAJES para poderlo agregar a la lista, mientras tanto, lo omito\n"
+                dict_temp[call.from_user.id]+=f"❌Al parecer ha ocurrido un Error con el canal/grupo <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)\n<b>Asegúrate</b> de que dicho canal/grupo EXISTA Y que yo sea ADMINISTRADOR CON DERECHOS para ENVIAR MENSAJES para poderlo agregar a la lista, mientras tanto, lo omito\n\n"
                 
                 continue
             
@@ -1239,7 +1319,7 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
             return
         
         elif not bot.get_chat_member(canal, bot.user.id).can_delete_messages:
-            dict_temp[call.from_user.id]+=f"❌No puedo eliminar mensajes en el chat de <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>), dame los permisos correspondientes para poder agregarlo a las publicaciones\n\n<b>Operación Cancelada</b>"
+            dict_temp[call.from_user.id]+=f"❌No puedo eliminar mensajes en el chat de <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>), dame los permisos correspondientes DE ADMINISTRADOR para poder agregarlo a las publicaciones\n\n<b>Operación Cancelada</b>"
             
             bot.send_message(message.chat.id, dict_temp[call.from_user.id], reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Volver | Menú ♻", callback_data="volver_menu")]]))
             
@@ -1277,10 +1357,13 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
         
         
         if dict_temp[call.from_user.id]:
-            bot.send_message(message.chat.id, f"{dict_temp[call.from_user.id]}\nNo se ha podido agregar ningún grupo/canal\nRevisa que el formato en el que estés mandando el mensaje sea el adecuado\n\nRecuerda que cada @username o ID del canal/grupo al que tenga acceso esté separado cada uno por una <b>,</b> (coma) y en caso de ser solamente un canal/grupo que esté bien escrita la información. También asegurate que entre el/los canales que envies ninguno esté ya en la lista de canales disponibles\n\n<b>Operación Cancelada</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Volver | Menú ♻", callback_data="volver_menu")]]))
+            dict_temp[call.from_user.id]+=f"\nNo se ha podido agregar ningún grupo/canal\nRevisa que el formato en el que estés mandando el mensaje sea el adecuado\n\nRecuerda que cada @username o ID del canal/grupo al que tenga acceso esté separado cada uno por una <b>,</b> (coma) y en caso de ser solamente un canal/grupo que esté bien escrita la información. También asegurate que entre el/los canales que envies ninguno esté ya en la lista de canales disponibles\n\nOperación Cancelada"
+            
+            msg = enviar_mensajes(bot, call, dict_temp[call.from_user.id], InlineKeyboardMarkup([[InlineKeyboardButton("Volver | Menú ♻", callback_data="volver_menu")]]))
+                    
             
         else:
-            bot.send_message(message.chat.id, "No se ha podido agregar ningún grupo/canal\nRevisa que el formato en el que estés mandando el mensaje sea el adecuado\n\nRecuerda que cada @username o ID del canal/grupo al que tenga acceso esté separado cada uno por una <b>,</b> (coma) y en caso de ser solamente un canal/grupo que esté bien escrita la información. También asegurate que entre el/los canales que envies ninguno esté ya en la lista de canales disponibles\n\n<b>Operación Cancelada</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Volver | Menú ♻", callback_data="volver_menu")]]))
+            bot.send_message(message.chat.id, "\nNo se ha podido agregar ningún grupo/canal\nRevisa que el formato en el que estés mandando el mensaje sea el adecuado\n\nRecuerda que cada @username o ID del canal/grupo al que tenga acceso esté separado cada uno por una <b>,</b> (coma) y en caso de ser solamente un canal/grupo que esté bien escrita la información. También asegurate que entre el/los canales que envies ninguno esté ya en la lista de canales disponibles\n\nOperación Cancelada", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Volver | Menú ♻", callback_data="volver_menu")]]))
         
     else:
         if dict_temp[call.from_user.id]:

@@ -315,7 +315,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                             
                             archivo_multimedia[0] = os.path.join(os.path.dirname(archivo_multimedia[0]), os.path.basename(archivo_multimedia[0]).replace(re.search(r"\d+", os.path.basename(archivo_multimedia[0])).group(), re.search(r"\d+", nombre).group()))
                             
-                        globals()[nombre]=Publicaciones(re.search(r"\d+", nombre).group(),texto_publicacion, canales_seleccionados, int(message.text)*60,archivo_multimedia , markup_botones_mensaje)
+                        globals()[nombre]=Publicaciones(re.search(r"\d+", nombre).group(),texto_publicacion, canales_seleccionados, int(message.text)*60, nombre ,archivo_multimedia , markup_botones_mensaje)
                         lote_publicaciones[nombre]=globals()[nombre]
                         
                         
@@ -335,7 +335,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                             archivo_multimedia[0] = os.path.join(os.path.dirname(archivo_multimedia[0]), os.path.basename(archivo_multimedia[0]).replace(re.search(r"\d+", os.path.basename(archivo_multimedia[0])).group(), re.search(r"\d+", nombre).group()))
                             
                         
-                        globals()[nombre]=Publicaciones(re.search(r"\d+", nombre).group(), texto_publicacion, canales_seleccionados, int(message.text)*60, archivo_multimedia)
+                        globals()[nombre]=Publicaciones(re.search(r"\d+", nombre).group(), texto_publicacion, canales_seleccionados, int(message.text)*60, nombre, archivo_multimedia)
                         lote_publicaciones[nombre]=globals()[nombre]
                         
                 cuestion=bot.send_message(message.chat.id, "La publicación en cuestión es la siguiente:")
@@ -412,15 +412,17 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                         
                         del lote_publicaciones[nombre]
                         del globals()[nombre]
+                        lote_publicaciones = usefull_functions.guardar_variables(lote_publicaciones)
                         
-                        return
+                        return lote_publicaciones
                 
                 
                 for i in lista_opcional:
                     bot.send_message(message.chat.id, i)
                     
                     
-                bot.reply_to(msg, f"El ID de esta publicación es: <code>{globals()[nombre].ID}</code>\n\nRecuérdalo por si quieres volver a trabajar con esta publicación a futuro\n\nPresiona /panel para volver atrás")
+                    
+                bot.reply_to(msg, f"<b>El ID de esta publicación es</b>: <code>{globals()[nombre].ID}</code>\n\n<b>Los grupos de publicación son</b>: {str([str(f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>") for i in globals()[nombre].canales])}\n\n<b>Se publicará cada</b>: {globals()[nombre].tiempo_publicacion // 60 // 60} hora(s), {globals()[nombre].tiempo_publicacion // 60 % 60} minutos y {globals()[nombre].tiempo_publicacion % 60} segundos\n\n{str('-'*70)}\nRecuerda el ID por si quieres volver a trabajar con esta publicación a futuro\n\nPresiona /panel para volver atrás")
                 
                 usefull_functions.guardar_variables(lote_publicaciones)
                 
@@ -1057,7 +1059,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             usefull_functions.guardar_variables(lote_publicaciones)
         
             try:
-                bot.edit_message_text("Publicación eliminada exitosamente", call.from_user.id, call.message.message_id)
+                bot.edit_message_text("Publicación eliminada exitosamente", call.from_user.id, call.message.message_id, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Volver Atrás 🔙", callback_data="ver_publicaciones")]]))
                 
             except:
                 bot.send_message(call.from_user.id, "Publicación eliminada exitosamente")
@@ -1085,6 +1087,11 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             
             
         elif "ver_publicaciones_index:" in call.data:
+            
+            try:
+                bot.delete_message(call.message.chat.id, call.message.message_id)
+            except:
+                pass
                             
             publicacion=lote_publicaciones[re.search(r":.*", call.data).group().replace(":", "")]
         
@@ -1199,29 +1206,32 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 
 
                 
-                
                 if publicacion.tiempo_eliminacion:
                     
                     if publicacion.canales:
-                        dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>:  {[f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>"  for i in publicacion.canales]}\n\n<b>Tiempo definido para la publicación</b>: {publicacion.tiempo_publicacion//60//60} hora(s) {(publicacion.tiempo_publicacion//60)%60} minuto(s)  {publicacion.tiempo_publicacion%60} segundo(s)\n\n<b>Tiempo restante para su próxima publicación</b>: {int((publicacion.proxima_publicacion - time.time())//60//60)} hora(s) / {int(((publicacion.proxima_publicacion - time.time())//60)%60)} minuto(s)\n\n<b>Tiempo definido para la eliminación</b>: {publicacion.tiempo_eliminacion//60//60} hora(s) {(publicacion.tiempo_eliminacion//60)%60} minuto(s)\n\n<b>Tiempo restante para su próxima eliminación</b>: {int((publicacion.proxima_eliminacion - time.time())//60//60)} hora(s) {int(((publicacion.proxima_eliminacion - time.time())//60)%60)} minuto(s)\n\n"
+                        dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>:  {[f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>"  for i in publicacion.canales]}\n\n<b>Tiempo definido para la publicación</b>: {publicacion.tiempo_publicacion//60//60} hora(s) {(publicacion.tiempo_publicacion//60)%60} minuto(s)  {publicacion.tiempo_publicacion%60} segundo(s)\n\n<b>Tiempo restante para su próxima publicación</b>: {(int(publicacion.proxima_publicacion - time.time() //60) //60)} hora(s) / {int(((publicacion.proxima_publicacion - time.time())//60)%60)} minuto(s)\n\n<b>Tiempo definido para la eliminación</b>: {publicacion.tiempo_eliminacion//60//60} hora(s) {(publicacion.tiempo_eliminacion//60)%60} minuto(s)\n\n<b>Tiempo restante para su próxima eliminación</b>: {int((publicacion.proxima_eliminacion - time.time())//60//60)} hora(s) {int(((publicacion.proxima_eliminacion - time.time())//60)%60)} minuto(s)\n\n"
                         
                     else:
-                        dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>: ¡No tiene canales para publicar!\n\n<b>Tiempo definido para la publicación</b>: {publicacion.tiempo_publicacion//60//60} hora(s) {(publicacion.tiempo_publicacion//60)%60} minuto(s)  {publicacion.tiempo_publicacion%60} segundo(s)\n\n<b>Tiempo restante para su próxima publicación</b>: {int((publicacion.proxima_publicacion - time.time())//60//60)} hora(s) / {int(((publicacion.proxima_publicacion - time.time())//60)%60)} minuto(s)\n\n<b>Tiempo definido para la eliminación</b>: {publicacion.tiempo_eliminacion//60//60} hora(s) {(publicacion.tiempo_eliminacion//60)%60} minuto(s)\n\n<b>Tiempo restante para su próxima eliminación</b>: {int((publicacion.proxima_eliminacion - time.time())//60//60)} hora(s) {int(((publicacion.proxima_eliminacion - time.time())//60)%60)} minuto(s)\n\n"
+                        dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>: <b>♿️ ¡No hay! ¡Agrega alguno! ‼️</b>\n\n<b>Tiempo definido para la publicación</b>: {publicacion.tiempo_publicacion//60//60} hora(s) {(publicacion.tiempo_publicacion//60)%60} minuto(s)  {publicacion.tiempo_publicacion%60} segundo(s)\n\n<b>Tiempo restante para su próxima publicación</b>: {int((publicacion.proxima_publicacion - time.time())//60//60)} hora(s) / {int(((publicacion.proxima_publicacion - time.time())//60)%60)} minuto(s)\n\n<b>Tiempo definido para la eliminación</b>: {publicacion.tiempo_eliminacion//60//60} hora(s) {(publicacion.tiempo_eliminacion//60)%60} minuto(s)\n\n<b>Tiempo restante para su próxima eliminación</b>: {int((publicacion.proxima_eliminacion - time.time())//60//60)} hora(s) {int(((publicacion.proxima_eliminacion - time.time())//60)%60)} minuto(s)\n\n"
                     
                 else:
                     
                     if publicacion.canales:
                     
-                        dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>:  {[f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>"  for i in publicacion.canales]}\n\n<b>Tiempo definido para la publicación</b>: {publicacion.tiempo_publicacion//60//60} hora(s) {(publicacion.tiempo_publicacion//60)%60} minuto(s)  {publicacion.tiempo_publicacion%60} segundo(s)\n\n<b>Tiempo restante para su próxima publicación</b>: {int(publicacion.proxima_publicacion - time.time() ) // 60 // 60} horas(s) / {int(((publicacion.proxima_publicacion - time.time())//60)%60)} minuto(s) / {int(((publicacion.proxima_publicacion - time.time()))%60)} segundo(s)\n\n"
+                        dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>:  {[f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>"  for i in publicacion.canales]}\n\n<b>Tiempo definido para la publicación</b>: {int(publicacion.tiempo_publicacion)//60//60} hora(s) {(int(publicacion.tiempo_publicacion)//60)%60} minuto(s)  {int(publicacion.tiempo_publicacion)%60} segundo(s)\n\n<b>Tiempo restante para su próxima publicación</b>: {int(publicacion.proxima_publicacion - time.time() ) // 60 // 60} horas(s) / {int(((publicacion.proxima_publicacion - time.time())//60)%60)} minuto(s) / {int(((publicacion.proxima_publicacion - time.time()))%60)} segundo(s)\n\n"
                         
                     else:
                         
-                        dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>: ¡No tiene canales para publicar!\n\n<b>Tiempo definido para la publicación</b>: {publicacion.tiempo_publicacion//60//60} hora(s) {(publicacion.tiempo_publicacion//60)%60} minuto(s)  {publicacion.tiempo_publicacion%60} segundo(s)\n\n<b>Tiempo restante para su próxima publicación</b>: {int(publicacion.proxima_publicacion - time.time() ) // 60 // 60} horas(s) / {int(((publicacion.proxima_publicacion - time.time())//60)%60)} minuto(s) / {int(((publicacion.proxima_publicacion - time.time()))%60)} segundo(s)\n\n"
+                        dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>: <b>♿️ ¡No hay! ¡Agrega alguno! ‼️</b>\n\n<b>Tiempo definido para la publicación</b>: {int(publicacion.tiempo_publicacion)//60//60} hora(s) {(int(publicacion.tiempo_publicacion)//60)%60} minuto(s)  {int(publicacion.tiempo_publicacion)%60} segundo(s)\n\n<b>Tiempo restante para su próxima publicación</b>: {int(publicacion.proxima_publicacion - time.time() ) // 60 // 60} horas(s) / {(int(publicacion.proxima_publicacion - time.time())//60)%60} minuto(s) / {int(((publicacion.proxima_publicacion - time.time()))%60)} segundo(s)\n\n"
                     
                     
             
             else:
-                dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>:  {[f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>"  for i in publicacion.canales]}\n\nEl hilo de publicaciones no está activo (no se está publicando)"
+                if publicacion.canales:
+                    dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>:  {[f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>"  for i in publicacion.canales]}\n\nEl hilo de publicaciones no está activo (no se está publicando)"
+                    
+                else:
+                    dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>: <b>♿️ ¡No hay! ¡Agrega alguno! ‼️</b>\n\nEl hilo de publicaciones no está activo (no se está publicando)"
             
             
     
@@ -1237,7 +1247,14 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             # El tiempo de mi cliente Danny es el de Perú - Lima, el mismo que el de Cuba, para hallar un tiempo fijo, independientemente de dónde sea el host, voy a usar el time.gmtime() que tiene 5 horas de adelanto y restarle las horas para que dé la adecuada
             markup.row(InlineKeyboardButton("Cambiar hora de Envío ⌛", callback_data=f"ver_publicaciones/time_to_post:{re.search(r":.*", call.data).group().replace(":", "")}")) 
             markup.row(InlineKeyboardButton("Cambiar tiempo de repetición de envío 🔃", callback_data=f"ver_publicaciones/change_time:{re.search(r":.*", call.data).group().replace(":", "")}"))
-            markup.row(InlineKeyboardButton("Agregar/Eliminar canales de la Publicación 👥", callback_data=f"ver_publicaciones/cc/:{re.search(r":.*", call.data).group().replace(":", "")}"))
+            if not publicacion.canales:
+                markup.row(InlineKeyboardButton("♿️ Agregar canales a la Publicación ➕‼️", callback_data=f"ver_publicaciones/cc/anadir:{re.search(r":.*", call.data).group().replace(":", "")}"))
+                
+            else:
+                markup.row(InlineKeyboardButton("Agregar/Eliminar canales a/de la Publicación 👥", callback_data=f"ver_publicaciones/cc/:{re.search(r":.*", call.data).group().replace(":", "")}"))
+                
+            
+            markup.row(InlineKeyboardButton("Volver Atrás 🔙", callback_data="ver_publicaciones"))
                                 
             
             
@@ -1259,9 +1276,13 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             msg=bot.send_message(call.from_user.id, "‼Alerta‼ : Esta configuración está adecuada para la zona horaria de Lima/Perú, si tienes dudas contacta con @mistakedelalaif\n\nCon esta opción programarás la Publicación para que sea enviada en una fecha concreta\nA continuación envía la hora en el siguiente formato:\n\n <code>Hora:Minuto:Día:Mes:Año</code>\n\n\n<u>Ejemplo de uso</u>:\n<code>17:35:2:7:2030</code>\n\n(La hora debe estar representada en formato de 24 horas [00-23]el mes debe estar representado en formato númerico [1-12] y el año debe estar representado con sus 4 digitos, no con los últimos 2)\n\n\nA continuación de este mensaje, envía la programación deseada teniendo en cuenta lo explicado, si quieres cancelar pulsa en el botón 'Cancelar Operación'", reply_markup=telebot.types.ReplyKeyboardMarkup(True, True).add("Cancelar Operación"))
             
             
-            def time_to_post_register(message, publicacion, lote_publicaciones=lote_publicaciones, hilo_publicaciones_activo=hilo_publicaciones_activo):
+            def time_to_post_register(message, msg ,publicacion, lote_publicaciones=lote_publicaciones, hilo_publicaciones_activo=hilo_publicaciones_activo):
 
-                
+                try:
+                    bot.delete_message(msg.chat.id, msg.message_id)
+                    bot.delete_message(message.chat.id, message.message_id)
+                except:
+                    pass
                 
                 message.text=message.text.strip()
                 
@@ -1301,7 +1322,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
 
                     hora = usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id])
                     
-                
+
                     
                     
                     
@@ -1313,15 +1334,12 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
 
                     
                     
-                    bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(hora, "hora_peru")))), reply_markup=ReplyKeyboardRemove())
+                    bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(hora, "hora_peru") + 1))), reply_markup=ReplyKeyboardRemove())
                         
                         
                     lote_publicaciones[publicacion].proxima_publicacion = hora
                     
-                    
-                    
-                    
-                    
+                             
 
                     
                     usefull_functions.guardar_variables(lote_publicaciones)
@@ -1341,7 +1359,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 return
                 
             
-            bot.register_next_step_handler(msg, time_to_post_register, re.search(r":.*", call.data).group().replace(":", ""))
+            bot.register_next_step_handler(msg, time_to_post_register, msg ,re.search(r":.*", call.data).group().replace(":", ""))
 
         elif "change_time" in call.data:
             #
@@ -1416,7 +1434,8 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 
                 if not publicacion.canales:
                     
-                    usefull_functions.enviar_mensajes(bot, call, "No tienes NINGÚN chat en esta Publicacion\n\nAgrega alguno antes de pensar en borrar", InlineKeyboardMarkup([[InlineKeyboardButton("Añadir Canal(es)", callback_data=f"ver_publicaciones/cc/anadir:{publicacion}")]]))
+                    usefull_functions.enviar_mensajes(bot, call, "No tienes NINGÚN chat en esta Publicacion\n\nAgrega alguno antes de pensar en borrar", InlineKeyboardMarkup([[InlineKeyboardButton("Añadir Canal(es)", callback_data=f"ver_publicaciones/cc/anadir:{publicacion.nombre}")]]))
+                    return
                     
                     
                 

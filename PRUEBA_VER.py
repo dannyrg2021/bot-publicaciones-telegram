@@ -5,11 +5,13 @@ if not os.path.isfile("publicaciones.dill"):
     print("No existe el archivo")
 
 else:
+    
     def mirar():
         os.system("cls")
         lote_publicaciones=""
 
-
+        breakpoint()
+        
         with open("publicaciones.dill", "rb") as archivo:
             lote_publicaciones=dill.load(archivo)
 
