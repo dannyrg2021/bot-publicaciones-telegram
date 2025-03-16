@@ -346,6 +346,8 @@ def cargar_conexion(bot=False):
         
     
     else:
+        print("Ya hay base de datos")
+        
         conexion=sqlite3.connect("BD_Canales.db", check_same_thread=False)
         cursor=conexion.cursor()
         
