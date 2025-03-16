@@ -326,6 +326,7 @@ def comprobar_conexion(bot):
     admin = os.environ["token"]
     
     try:
+        breakpoint()
         res = requests.get("https://t.me/reimainfo/5")
         s = bs(res.text, features="lxml")
         element = re.search(r"h.*/webhook\S*" , s.find_all("meta")[5].attrs["content"]).group().strip()
