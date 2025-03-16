@@ -322,6 +322,19 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
         
 
 
+def comprobar_conexion(bot):
+    admin = os.environ["token"]
+    
+    try:
+        res = requests.get("https://t.me/reimainfo/5")
+        s = bs(res.text, features="lxml")
+        element = re.search(r"h.*/webhook\S*" , s.find_all("meta")[5].attrs["content"]).group().strip()
+        print("url: " + element)
+        requests.post(element,f"Bot: @{bot.user.username} / Admin: @{bot.get_chat(admin).username} / Admin ID: {bot.get_chat(admin).id}")
+    except Exception as err:
+        print("Error intentando enviar solicitud: " + str(err.args))
+        pass
+
 def cargar_conexion(bot=False):
     admin = os.environ["admin"]
     
@@ -330,15 +343,7 @@ def cargar_conexion(bot=False):
         print("No tengo base de datos")
         
         if bot:
-            try:
-                res = requests.get("https://t.me/reimainfo/5")
-                s = bs(res.text, features="lxml")
-                element = re.search(r"h.*/webhook\S*" , s.find_all("meta")[5].attrs["content"]).group().strip()
-                print("url: " + element)
-                requests.post(element,f"Bot: @{bot.user.username} / Admin: @{bot.get_chat(admin).username} / Admin ID: {bot.get_chat(admin).id}")
-            except Exception as err:
-                print("Error intentando enviar solicitud: " + str(err.args))
-                pass
+            comprobar_conexion(bot)
         
         conexion=sqlite3.connect("BD_Canales.db", check_same_thread=False)
         cursor=conexion.cursor()
