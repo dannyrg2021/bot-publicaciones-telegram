@@ -661,6 +661,7 @@ def ver_canal(call, bot, user, indice, cursor):
                 dict_temp[user][lista_id[i]] = {"callback_data" : "ver_canal:" + str(lista_fetch[i][0])}
                 
             except Exception as e:
+                breakpoint()
 
                 if "list index out of range" in str(e.args):
                     break
@@ -1453,7 +1454,7 @@ def channel_register(message, bot, call, cursor, conexion, lote_publicaciones):
                     dict_temp[call.from_user.id]+=f"❌¡Ha ocurrido un error con el chat de: <code>{canal}</code> (<a href='{bot.get_chat(canal).invite_link}'>{bot.get_chat(canal).title}</a>)!\n\n<u>Descripción del error</u>\n{e}"
                     
                 except:
-                    dict_temp[call.from_user.id]+="¡No has ingresado la información correcta!\n\nOperacion Cancelada"
+                    dict_temp[call.from_user.id]+="❌¡Este chat o no existe o no soy capaz de acceder a él!\n\nOperacion Cancelada"
 
             
             bot.send_message(message.chat.id, dict_temp[call.from_user.id], reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Volver | Menú ♻", callback_data="volver_menu")]]))

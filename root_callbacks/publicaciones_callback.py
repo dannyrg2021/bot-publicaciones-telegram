@@ -1199,13 +1199,20 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 else:
                     msg=bot.send_message(call.from_user.id, publicacion.texto) 
                     
-                    
             
+            for canal in publicacion.canales:
+                try:
+                    if not bot.get_chat_member(canal, bot.user.id).can_send_messages:
+                        publicacion.canales.remove(canal)
+                except:
+                    publicacion.canales.remove(canal)
+                                
+            lote_publicaciones =  usefull_functions.guardar_variables(lote_publicaciones)
             if hilo_publicaciones_activo:
                 lote_publicaciones=usefull_functions.cargar_variables()
                 
 
-                
+
                 if publicacion.tiempo_eliminacion:
                     
                     if publicacion.canales:
@@ -1217,6 +1224,8 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 else:
                     
                     if publicacion.canales:
+                        
+                        
                     
                         dict_temp[call.from_user.id]=f"<b>ID de Publicación</b>: <code>{publicacion.ID}</code>\n\n<b>Canales de la Publicación</b>:  {[f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>"  for i in publicacion.canales]}\n\n<b>Tiempo definido para la publicación</b>: {int(publicacion.tiempo_publicacion)//60//60} hora(s) {(int(publicacion.tiempo_publicacion)//60)%60} minuto(s)  {int(publicacion.tiempo_publicacion)%60} segundo(s)\n\n<b>Tiempo restante para su próxima publicación</b>: {int(publicacion.proxima_publicacion - time.time() ) // 60 // 60} horas(s) / {int(((publicacion.proxima_publicacion - time.time())//60)%60)} minuto(s) / {int(((publicacion.proxima_publicacion - time.time()))%60)} segundo(s)\n\n"
                         
@@ -1401,7 +1410,8 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
             
             
             if "anadir" in call.data and not "operacion" in call.data:
-                
+                lote_publicaciones = usefull_functions.cargar_variables()
+
 
                 lista_seleccionada=[]
                 
@@ -1412,6 +1422,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 if not dict_temp[call.from_user.id]:
                     
                     usefull_functions.enviar_mensajes(bot, call, "No tienes NINGÚN canal en la Base de Datos\n\nAgrega alguno antes de pensar en agregar alguno a la Publicación" , InlineKeyboardMarkup([[InlineKeyboardButton("Añadir Canal(es)", callback_data=f"anadir_canal")]]))
+                    return
                     
 
 
