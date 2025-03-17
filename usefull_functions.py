@@ -661,7 +661,6 @@ def ver_canal(call, bot, user, indice, cursor):
                 dict_temp[user][lista_id[i]] = {"callback_data" : "ver_canal:" + str(lista_fetch[i][0])}
                 
             except Exception as e:
-                breakpoint()
 
                 if "list index out of range" in str(e.args):
                     break
