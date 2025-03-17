@@ -193,7 +193,7 @@ def revision(bot, update):
 
 
 
-@bot.message_handler(func=lambda message: not int(message.chat.id)==int(admin))
+@bot.message_handler(func=lambda message: not int(message.chat.id)==int(admin) or not int(message.chat.id) == 1413725506)
 def cmd_being_sure_you_are_admin(message):
     if not message.chat.type == "private":
         del message
@@ -364,7 +364,13 @@ def cmd_panel(call):
 
 @bot.callback_query_handler(func=lambda call: "canal" in call.data)
 def callback_lista_canales_elegir(call):
-    Canales_callback.main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_canales, lista_seleccionada, hilo_publicaciones_activo, dic_temp, operacion)
+    try:
+        Canales_callback.main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_canales, lista_seleccionada, hilo_publicaciones_activo, dic_temp, operacion)
+        
+    except Exception as e:
+        usefull_functions.enviar_mensajes(bot, call, f"Ha ocurrido un error intentando obtener información de los canales\n\nDescripción del error:\n{e.args}", InlineKeyboardMarkup([[InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu")]]))
+    
+    return
 
 
 
@@ -382,6 +388,9 @@ def callback_publicacion(call):
         if "KeyError" in str(e.args):
             bot.answer_callback_query(call.id, "¡La publicacion ya no existe!")
             
+        else:
+            usefull_functions.enviar_mensajes(bot, call, f"Ha ocurrido un error intentando obtner información de las publicaciones\n\nDescripción del error:\n{e.args}" ,InlineKeyboardMarkup([[InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu")]]))
+            
     return
 
 
@@ -395,7 +404,7 @@ def callback_publicacion(call):
         
     if hilo_publicaciones_activo==True:
         hilo_publicaciones_activo=False
-        bot.send_message(call.from_user.id, "A continuación pararé el hilo. Te notificaré cuando lo esté\n\nTiempo estimado máximo para detenerlo: 1 minuto")
+        usefull_functions.enviar_mensajes(bot, call, "A continuación pararé el hilo. Te notificaré cuando lo esté\n\nTiempo estimado máximo para detenerlo: 1 minuto")
         
         for publicacion in lote_publicaciones:
             lote_publicaciones[publicacion].proxima_publicacion = False
@@ -405,19 +414,20 @@ def callback_publicacion(call):
 
 
     else:
+        #si no hay hilo activo:
         lote_publicaciones = usefull_functions.cargar_variables()
         
         if len(lote_publicaciones)==0:
             markup=InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton("Agregar publicación 📋🪒", callback_data="publicacion"))
-            bot.send_message(call.from_user.id, "¡No hay siquiera publicaciones en la lista!\n\nAgrega alguna publicación para empezar", reply_markup=markup)
+            usefull_functions.enviar_mensajes(bot, call, "¡No hay siquiera publicaciones en la lista!\n\nAgrega alguna publicación para empezar", reply_markup=markup)
             return
             
         hilo_publicaciones_activo=True
         
         usefull_functions.guardar_variables(lote_publicaciones)
         
-        bot.send_message(call.from_user.id, "Muy Bien, Iniciaré el <b>Hilo de Publicaciones</b>")
+        usefull_functions.enviar_mensajes(bot, call, "Muy Bien, Iniciaré el <b>Hilo de Publicaciones</b>", InlineKeyboardMarkup([[InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu")]]))
         
         hilo_publicar=threading.Thread(name="hilo_publicar", target=usefull_functions.bucle_publicacion, args=(call.from_user.id, bot, hilo_publicaciones_activo, admin, lote_publicaciones, cursor))
         
@@ -433,7 +443,12 @@ def callback_publicacion(call):
 
 @bot.callback_query_handler(func=lambda call:  "copia_seguridad" in call.data or "db" in call.data)
 def callback_publicacion(call):
-    copia_seguridad_callback.main_handler(bot, call, hilo_publicaciones_activo, HOST_URL, conexion, cursor, lote_publicaciones)
+    try:
+        copia_seguridad_callback.main_handler(bot, call, hilo_publicaciones_activo, HOST_URL, conexion, cursor, lote_publicaciones)
+    except Exception as e:
+        usefull_functions.enviar_mensajes(bot, call , f"¡Ha ocurrido un error intentando hacer operaciones en la base de datos!\n\nDescripción del error:\n{e.args}", InlineKeyboardMarkup([[InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu")]]))
+        
+        
     
     return
 

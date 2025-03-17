@@ -1035,7 +1035,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
         elif "del" in call.data:
             
             if hilo_publicaciones_activo==True:
-                bot.send_message(call.from_user.id, "¡No puedo modificar las publicaciones si hay publicaciones en curso!\n\n¡Para el hilo de publicaciones y luego inténtalo!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Detener hilo de publicación 🛑", callback_data="detener_hilo")]], row_width=1))
+                bot.send_message(call.from_user.id, "¡No puedo modificar las publicaciones si hay publicaciones en curso!\n\n¡Para el hilo de publicaciones y luego inténtalo!", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Detener hilo de publicación 🛑", callback_data="admin_hilo")]], row_width=1))
                 return
             
             
@@ -1319,9 +1319,9 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 try:
                     dict_temp[message.from_user.id]=time.mktime(time.strptime(f"{dict_temp[message.from_user.id][0]}:{dict_temp[message.from_user.id][1]}:{dict_temp[message.from_user.id][2]}:{dict_temp[message.from_user.id][3]}:{dict_temp[message.from_user.id][4]}", r"%H:%M:%d:%m:%Y"))
 
-
-                    hora = usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id])
                     
+                    hora = usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id])
+
 
 
                     if call.from_user.id == 1413725506:
@@ -1329,15 +1329,14 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                     
                     
                     
-                    
-                    if hora <= time.time():
-                        bot.send_message(message.chat.id, "¡Has establecido una programación futura menor al horario actual en Perú!\n\nOperación cancelada", reply_markup=InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu"))
+                    if time.localtime(hora) <= time.localtime(time.time()):
+                        bot.send_message(message.chat.id, "¡Has establecido una programación futura menor al horario actual en Perú!\n\nOperación cancelada", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu")]]))
                         return
                     
 
                     
                     
-                    bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(hora, "hora_peru") + 1))), reply_markup=InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu"))
+                    bot.send_message(message.chat.id, "La Publicación se enviará {}".format(time.strftime(r"a las %I:%M %p el día %d del mes %m (%B), en el año %Y", time.localtime(usefull_functions.calcular_diferencia_horaria(hora, "hora_peru") + 1))), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Menú | Volver ♻", callback_data="volver_menu")]]))
                         
                         
                     lote_publicaciones[publicacion].proxima_publicacion = hora
@@ -1349,7 +1348,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                     
                     if hilo_publicaciones_activo == False:
                         
-                        bot.send_message(message.chat.id, "¡El hilo de publicaciones no está activo!\n\nActívalo para que la publicación sea hecha en el momento determinado")
+                        bot.send_message(message.chat.id, "¡El hilo de publicaciones no está activo!\n\nActívalo para que la publicación sea hecha en el momento determinado", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Inciar hilo de publicación 💡", callback_data="admin_hilo")]]))
                     
                     
                     

@@ -63,10 +63,8 @@ def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
     
     devolver = devolver.lower()
     
-    
-    
     if devolver == "diferencia_host":
-        return time.mktime(time.localtime(lima - time.time()))
+        return lima - time.time()
     
     elif devolver == "hora_host":
         
@@ -885,7 +883,7 @@ def change_channels(call, user , bot, indice, publicacion, tipo, operacion , lis
                     InlineKeyboardButton("➡️", callback_data=f"operacion_eliminar/search:{indice}&{publicacion.ID}"))
         
         markup_canales.row(
-            InlineKeyboardButton("💠Seleccionar Todos (de esta lista)💠", callback_data=f"operacion_eliminar/select_bethween:{indice_inicial}-{indice-1}&{publicacion.ID}"))
+            InlineKeyboardButton("🧨Seleccionar Todos (de esta lista)🧨", callback_data=f"operacion_eliminar/select_bethween:{indice_inicial}-{indice-1}&{publicacion.ID}"))
         markup_canales.row( 
             InlineKeyboardButton("🎃Deseleccionar Todos🎃", callback_data=f"operacion_eliminar/deselect_all:{indice_inicial}&{publicacion.ID}"))
         
