@@ -47,13 +47,14 @@ def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
     
     """
     
-    
+    # tiempo_diferencia = 18000 
     tiempo_diferencia = time.mktime(time.gmtime()) - time.time()
     
     if not isinstance(HoraHost, float):
         HoraHost = time.mktime(HoraHost)
     
     try:
+        
         lima = json.loads(requests.get("http://api.timezonedb.com/v2.1/get-time-zone", params={"key": "68TYQMUQ25P6", "by": "zone", "format": "json" , "zone" : "America/Lima"}).content)["timestamp"] + tiempo_diferencia
     except Exception as e:
         return ("ERROR", e.args)
@@ -63,13 +64,13 @@ def calcular_diferencia_horaria(HoraHost=time.time(), devolver="hora_host"):
     devolver = devolver.lower()
     
     
-
     
     if devolver == "diferencia_host":
         return time.mktime(time.localtime(lima - time.time()))
     
     elif devolver == "hora_host":
-        return time.mktime(time.localtime(time.time()+3600 + (HoraHost - lima)))
+        
+        return time.mktime(time.localtime(time.time() + (HoraHost - lima)))
     
     elif devolver == "hora_peru":
         

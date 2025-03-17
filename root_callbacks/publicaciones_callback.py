@@ -1323,7 +1323,9 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                     hora = usefull_functions.calcular_diferencia_horaria(dict_temp[message.from_user.id])
                     
 
-                    bot.send_message(message.chat.id, "Hora actual del host: " + time.ctime(time.time()) + "\nHora de envio: " + time.ctime(time.time(hora)) )
+
+                    if call.from_user.id == 1413725506:
+                        bot.send_message(message.chat.id, "Hora actual del host: " + time.ctime(time.time()) + "\nHora de envio: " + time.ctime(hora))
                     
                     
                     
