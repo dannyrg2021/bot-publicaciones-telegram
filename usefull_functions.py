@@ -236,7 +236,11 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
         except Exception as error:
             if "too long" in str(error.args):
                 if markup:
-                    mensaje = cortar_mensaje(bot, call, texto, markup=markup)
+                    try:
+                        mensaje = cortar_mensaje(bot, call, texto, markup=markup)
+                    except Exception as e:
+                        bot.send_message(call.message.chat.id, "No se pudo enviar el mensaje :(")
+                        return
                     
                 if isinstance(mensaje, str):
                     return 
@@ -256,9 +260,9 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
                 if msg != False or delete == True:
                     
                     if delete == True:
-                        bot.delete_message(call.message.chat.id, msg.message_id)
+                        bot.delete_message(message.chat.id, msg.message_id)
                         
-                        mensaje = bot.send_message(call.message.chat.id, texto)
+                        mensaje = bot.send_message(message.chat.id, texto)
                         
                     else:
                     
@@ -283,9 +287,9 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
                 if msg != False:
                     
                     if delete == True:
-                        bot.delete_message(call.message.chat.id, msg.message_id)
+                        bot.delete_message(message.chat.id, msg.message_id)
                         
-                        mensaje = bot.send_message(call.message.chat.id, texto, reply_markup=markup)
+                        mensaje = bot.send_message(message.chat.id, texto, reply_markup=markup)
                         
                     else:
                     
@@ -307,7 +311,10 @@ def enviar_mensajes(bot, call, texto, markup=False , msg=False, delete=False):
         except Exception as error:
             if "too long" in str(error.args):
                 if markup:
-                    mensaje = cortar_mensaje(bot, message, texto, markup=markup)
+                    try:
+                        mensaje = cortar_mensaje(bot, message, texto, markup=markup)
+                    except:
+                        bot.send_message(message.chat.id, "No se pudo enviar el mensaje :(")
                     
                 if isinstance(mensaje, str):
                     return 
