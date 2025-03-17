@@ -229,6 +229,10 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 
                 lote_publicaciones = usefull_functions.cargar_variables()
                 
+                #call.data = "eliminar_canal_confirm:-2134564675467" <= para eliminar un canal especifico
+                if ":" in call.data:
+                    lista_seleccionada = [int(re.search(r":.*", call.data).group().replace(":", ""))]
+                
                 if not lista_seleccionada:
                     bot.answer_callback_query(call.id, "¡No hay ningún canal seleccionado!", True)
                     return
@@ -242,7 +246,9 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                 
                 conexion.commit()
                 
-                
+                if ":" in call.data:
+                    usefull_functions.enviar_mensajes(bot, call, "Canal eliminado exitosamente")
+                    return
                 
                 dic_temp[call.from_user.id] = "Se han eliminado los siguientes canales exitosamente: \n\n"
                 for e,i in enumerate(lista_seleccionada, start=1):

@@ -420,7 +420,7 @@ def callback_publicacion(call):
         if len(lote_publicaciones)==0:
             markup=InlineKeyboardMarkup()
             markup.add(InlineKeyboardButton("Agregar publicación 📋🪒", callback_data="publicacion"))
-            usefull_functions.enviar_mensajes(bot, call, "¡No hay siquiera publicaciones en la lista!\n\nAgrega alguna publicación para empezar", reply_markup=markup)
+            usefull_functions.enviar_mensajes(bot, call, "¡No hay siquiera publicaciones en la lista!\n\nAgrega alguna publicación para empezar", markup)
             return
             
         hilo_publicaciones_activo=True
