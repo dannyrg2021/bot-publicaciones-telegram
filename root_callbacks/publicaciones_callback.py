@@ -422,7 +422,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
                     
                     
                     
-                bot.reply_to(msg, f"<b>El ID de esta publicación es</b>: <code>{globals()[nombre].ID}</code>\n\n<b>Los grupos de publicación son</b>: {str([str(f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>") for i in globals()[nombre].canales])}\n\n<b>Se publicará cada</b>: {globals()[nombre].tiempo_publicacion // 60 // 60} hora(s), {globals()[nombre].tiempo_publicacion // 60 % 60} minutos y {globals()[nombre].tiempo_publicacion % 60} segundos\n\n{str('-'*70)}\nRecuerda el ID por si quieres volver a trabajar con esta publicación a futuro\n\nPresiona /panel para volver atrás")
+                bot.reply_to(msg, f"<b>El ID de esta publicación es</b>: <code>{globals()[nombre].ID}</code>\n\n<b>Los grupos de publicación son</b>: {str([str(f"<a href='{bot.get_chat(i).invite_link}'>{bot.get_chat(i).title}</a>") for i in globals()[nombre].canales])}\n\n<b>Se publicará cada</b>: {globals()[nombre].tiempo_publicacion // 60 // 60} hora(s), {globals()[nombre].tiempo_publicacion // 60 % 60} minutos y {globals()[nombre].tiempo_publicacion % 60} segundos\n\n{str('-'*20)}\nRecuerda el ID por si quieres volver a trabajar con esta publicación a futuro\n\nPresiona /panel para volver atrás")
                 
                 usefull_functions.guardar_variables(lote_publicaciones)
                 
@@ -1325,7 +1325,7 @@ def main_handler(bot,call, cursor, admin , conexion, lote_publicaciones, lista_c
 
 
                     if call.from_user.id == 1413725506:
-                        bot.send_message(message.chat.id, "Hora actual del host: " + time.ctime(time.time()) + "\nHora de envio: " + time.ctime(hora))
+                        bot.send_message(message.chat.id, "Hora Actual en Perú: " +  time.ctime(usefull_functions.calcular_diferencia_horaria(devolver="peru")) + "\nContenido del mensaje: " + message.text + "\nHora actual del host: " + time.ctime(time.time()) + "\nHora de envio: " + time.ctime(hora))
                     
                     
                     
