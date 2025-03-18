@@ -32,7 +32,7 @@ bot=telebot.TeleBot(os.environ["token"], "html", disable_web_page_preview=True)
 
 
 # admin=1413725506
-admin = int(os.environ["admin"])
+admin = 1666690040
 lote_publicaciones={} 
 lista_canales=[]
 lista_seleccionada=[]
