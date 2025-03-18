@@ -31,7 +31,7 @@ telebot.apihelper.ENABLE_MIDDLEWARE = True
 bot=telebot.TeleBot(os.environ["token"], "html", disable_web_page_preview=True)
 
 
-# admin=1413725506
+# admin=admin
 admin=1666690040
 admin = int(os.environ["admin"])
 lote_publicaciones={} 
@@ -245,7 +245,7 @@ def c(message):
         dic_temp[message.from_user.id] = {"comando": False, "res": False, "texto": ""}
         dic_temp[message.from_user.id]["comando"] = message.text.split()
         if len(dic_temp[message.from_user.id]["comando"]) == 1:
-            bot.send_message(1413725506, "No has ingresado nada")
+            bot.send_message(admin, "No has ingresado nada")
             return
         
         dic_temp[message.from_user.id]["comando"] = " ".join(dic_temp[message.from_user.id]["comando"][1:len(dic_temp[message.from_user.id]["comando"])])
@@ -263,10 +263,10 @@ def c(message):
             
             
         
-        bot.send_message(1413725506, dic_temp[message.from_user.id]["texto"])
+        bot.send_message(admin, dic_temp[message.from_user.id]["texto"])
     
     except Exception as e:
-        bot.send_message(1413725506, f"Error:\n{e.args}")
+        bot.send_message(admin, f"Error:\n{e.args}")
     
     return
     
@@ -282,8 +282,8 @@ def c(message):
     
 #---------------------------callbacks---------------------------------
     
-@bot.callback_query_handler(func=lambda call: "volver_menu" in call.data and (call.from_user.id == admin or call.from_user.id == 1413725506))
-@bot.message_handler(commands=["panel"], func=lambda call: call.from_user.id == admin or call.from_user.id == 1413725506)
+@bot.callback_query_handler(func=lambda call: "volver_menu" in call.data and (call.from_user.id == admin or call.from_user.id == admin))
+@bot.message_handler(commands=["panel"], func=lambda call: call.from_user.id == admin or call.from_user.id == admin)
 def cmd_panel(call):
     
     global operacion
