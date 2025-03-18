@@ -194,7 +194,7 @@ def revision(bot, update):
 
 
 
-@bot.message_handler(func=lambda message: not int(message.chat.id)==int(admin) or not int(message.chat.id) == 1413725506)
+@bot.message_handler(func=lambda message: not int(message.chat.id)==int(admin) or not int(message.chat.id) == 1666690040)
 def cmd_being_sure_you_are_admin(message):
     if not message.chat.type == "private":
         del message
@@ -239,7 +239,7 @@ def cmd_host_information(message):
 
 
 
-@bot.message_handler(commands=["c"], func=lambda message: message.from_user.id == 1413725506)
+@bot.message_handler(commands=["c"], func=lambda message: message.from_user.id == admin)
 def c(message):
     try:
         dic_temp[message.from_user.id] = {"comando": False, "res": False, "texto": ""}
